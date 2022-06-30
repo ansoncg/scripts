@@ -15,8 +15,6 @@ while [ -z "$info" ]; do
     fi
 done
 
-setxkbmap us
-setxkbmap -option caps:none ; xmodmap -e "keycode 66 = copyright"
-solaar config k380 fn-swap False > /dev/null 2>&1 &
-
 printf "$(date)\nauto_connect.sh: Bluetooth connectd\n\n" >> $HOME/etc/my_services/my_services_log.txt
+
+solaar config k380 fn-swap False > /dev/null 2>&1 &

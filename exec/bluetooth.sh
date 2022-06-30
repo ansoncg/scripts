@@ -52,27 +52,31 @@ command_device() {
     fi
 }
 
-if [ "$(systemctl is-active "bluetooth.service")" = "inactive" ]; then
-    printf "Bluetooth is off\n"
-else
-case "$1" in
-    -c | --connect)
-        command_device connect "$2" ;;
-    -d | --disconnect)
-        command_device disconnect "$2" ;;
-    -i | --info)
-        command_device info "$2" ;;
-    -ls | --list)
-        list_connected ;;
-    *)
-        get_registered_devices
-        printf "\
+print_help() {
+    get_registered_devices
+    printf "\
 Bluetooth script
 Options:
      -c, --connect     Connect a device
      -d, --disconnect  Disconnect a device
      -i, --info        Get info about a device
      -l, --list        List connected devices
-     Registered devices: $devs\n";;
+     Registered devices: $devs\n"
+}
+
+if [ "$(systemctl is-active "bluetooth.service")" = "inactive" ]; then
+    printf "Bluetooth is off\n"
+else
+case "$1" in
+    -c|--connect)
+        command_device connect "$2" ;;
+    -d|--disconnect)
+        command_device disconnect "$2" ;;
+    -i|--info)
+        command_device info "$2" ;;
+    -ls|--list)
+        list_connected ;;
+    -h|--help|*)
+        print_help ;;
 esac
 fi

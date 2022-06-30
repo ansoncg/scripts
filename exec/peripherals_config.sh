@@ -11,7 +11,7 @@ Options:
     -mn, --monitor
         single: Single laptop monitor.
         dual-dual: Dual monitor with both on.
-        dual-single: Dual monitor with ony HDMI on.
+        dual-single: Dual monitor with only HDMI on.
     -ms, --mouse
         TODO
     -h, --help
@@ -37,6 +37,7 @@ config_keyboard() {
             setxkbmap us
             setxkbmap -option caps:none
             xmodmap -e "keycode 66 = copyright"
+            xset r rate 300 50
             solaar config k380 fn-swap False > /dev/null 2>&1 &
             ;;
         *)

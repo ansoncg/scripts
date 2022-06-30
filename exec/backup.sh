@@ -1,21 +1,48 @@
 #!/bin/bash
 
 # Default compression alg => lz4
-# Only for the path .../SONY/backup/borg
 
-if [ "$1" == "-now" ] ; then
-    borg create --progress /home/anderson/usb/anderson/SONY/backup/borg::backup-{now:%d-%m-%Y} \
-        /home/anderson/files \
-        /home/anderson/pictures \
-        /home/anderson/etc \
-        /home/anderson/compile_flags.txt 
-elif [ "$1" == "-list" ] ; then
-    borg list /home/anderson/usb/anderson/SONY/backup/borg
-elif [ "$1" == "-check" ] ; then
-    borg check /home/anderson/usb/anderson/SONY/backup/borg
-else
-    printf "Options:
-    -now\tCreate a new backup with the current time
-    -list\tList the backups
-    -check\tCheck the backup consistency\n"
-fi
+BACKUP_PATH="$HOME/usb/anderson/SONY/backup/borg"
+
+backup_now() {
+    borg create --progress $BACKUP_PATH::backup-{now:%d-%m-%Y} \
+        $HOME/files \
+        $HOME/pictures \
+        $HOME/etc \
+        $HOME/compile_flags.txt 
+}
+
+backup_list() {
+    borg list $BACKUP_PATH
+}
+
+backup_check() {
+    borg check $BACKUP_PATH
+}
+
+backup_info() {
+    borg info $BACKUP_PATH
+}
+
+print_help() {
+printf "\
+Backup script
+Options:
+    -n, --now       Create a new backup with the current time
+    -ls, --list     List the backups
+    -c, --check     Check the backup consistency
+    -h, --help      Show this help\n"
+}
+
+case "$1" in
+    -n|--now)
+        backup_now ;;
+    -ls|--list)
+        backup_list ;;
+    -c|--check)
+        backup_check ;;
+    -i|--info)
+        backup_info ;;
+    -h|--help|*)
+        print_help ;;
+esac
