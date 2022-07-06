@@ -8,8 +8,8 @@
 
 import requests, os
 
-auth = str(os.popen('head -1 $HOME/etc/my_apps_data/twitch.txt').read().strip())
-client_id = str(os.popen('tail -1 $HOME/etc/my_apps_data/twitch.txt').read().strip())
+auth = str(os.popen('head -1 $HOME/etc/my_apps_data/twitch.keys').read().strip())
+client_id = str(os.popen('tail -1 $HOME/etc/my_apps_data/twitch.keys').read().strip())
 
 headers = {
     'Client-ID': client_id,

@@ -37,8 +37,10 @@ run_app() {
         --multi \
         < "$cache_path"/launcher.cache)
     exe=$(echo "$entry" | cut -d ':' -f 2)
-    printf "Running:%s\n" "$exe"
-    $exe >> "$HOME"/etc/my_apps_data/launcher.log 2>&1 & disown
+    if [ "$exe" ]; then
+        printf "Running:%s\n" "$exe"
+        $exe >> "$HOME"/etc/my_apps_data/launcher.log 2>&1 & disown
+    fi
 }
 
 show_help() {

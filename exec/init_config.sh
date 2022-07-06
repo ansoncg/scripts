@@ -7,8 +7,8 @@ else
 fi
 
 xset r rate 300 50
-nitrogen --restore > /dev/null 2>&1
-exec $SCRIPTS_PATH/launch_polybar.sh > /dev/null 2>&1
-
+xsetroot -solid "#282a36"
 setxkbmap us
 setxkbmap -option caps:none ; xmodmap -e "keycode 66 = copyright"
+
+exec $SCRIPTS_PATH/launch_polybar.sh > /dev/null 2>&1

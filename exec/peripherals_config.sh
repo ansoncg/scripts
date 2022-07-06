@@ -2,6 +2,7 @@
 
 show_help() {
         printf "\
+Peripherals configuration script
 Options:
     -kb, --keyboard
         caps: Enable capslock.
@@ -86,7 +87,6 @@ config_monitor() {
             show_help
             exit
     esac
-    nitrogen --restore > /dev/null 2>&1
     exec $SCRIPTS_PATH/launch_polybar.sh > /dev/null 2>&1
 }
 
@@ -109,7 +109,7 @@ case "$1" in
     -ms|--mouse)
         config_mouse "$2"
         ;;
-    *|-h|--help)
+    -h|--help|*)
         show_help
         ;;
 esac

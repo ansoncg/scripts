@@ -67,16 +67,16 @@ Options:
 if [ "$(systemctl is-active "bluetooth.service")" = "inactive" ]; then
     printf "Bluetooth is off\n"
 else
-case "$1" in
-    -c|--connect)
-        command_device connect "$2" ;;
-    -d|--disconnect)
-        command_device disconnect "$2" ;;
-    -i|--info)
-        command_device info "$2" ;;
-    -ls|--list)
-        list_connected ;;
-    -h|--help|*)
-        print_help ;;
-esac
+    case "$1" in
+        -c|--connect)
+            command_device connect "$2" ;;
+        -d|--disconnect)
+            command_device disconnect "$2" ;;
+        -i|--info)
+            command_device info "$2" ;;
+        -ls|--list)
+            list_connected ;;
+        -h|--help|*)
+            print_help ;;
+    esac
 fi
