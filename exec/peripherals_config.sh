@@ -39,7 +39,7 @@ config_keyboard() {
             setxkbmap -option caps:none
             xmodmap -e "keycode 66 = copyright"
             xset r rate 300 50
-            solaar config k380 fn-swap False > /dev/null 2>&1 &
+            solaar config k380 Fn-swap false > /dev/null 2>&1 &
             ;;
         *)
             show_help

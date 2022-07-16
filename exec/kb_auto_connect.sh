@@ -17,4 +17,4 @@ done
 
 printf "$(date)\nauto_connect.sh: Bluetooth connectd\n\n" >> $HOME/etc/my_services/my_services_log.txt
 
-solaar config k380 fn-swap False > /dev/null 2>&1 &
+solaar config k380 Fn-swap false > /dev/null 2>&1 &

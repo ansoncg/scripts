@@ -7,10 +7,10 @@ killall -q polybar
 while pgrep -u $UID -x polybar >/dev/null; do sleep 1; done
 
 if [ $(xrandr --query | grep -c " connected") == "2" ] ; then
-    polybar -c $HOME/.config/polybar/config.ini mybar &
+    polybar -c $HOME/.config/polybar/config.ini main &
     polybar -c $HOME/.config/polybar/config.ini secondary &
 else
-    polybar -c $HOME/.config/polybar/config.ini mybar &
+    polybar -c $HOME/.config/polybar/config.ini main &
 fi
 
 echo "Polybar launched..."

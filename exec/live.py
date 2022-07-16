@@ -21,7 +21,7 @@ moon = requests.get('https://api.twitch.tv/helix/channels?broadcaster_id=1210593
 data = response['data']
 cols = int(os.popen('tput cols').read())
 
-print ("-"*cols)
+print("-"*cols)
 for stream in data:
     channel_name = stream["user_name"];
     channel_game = stream["game_name"];
@@ -41,4 +41,4 @@ for stream in data:
         ))
 
 print("\nMoonmoon title:", moon['data'][0]['title']) 
-print ('-'*cols)
+print('-'*cols)
