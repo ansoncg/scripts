@@ -12,6 +12,7 @@ display_help "Power mode" "\
 Shutdown - Super+F1
 Exit i3 - Super+F2 
 Reboot - Super+F3
+Lock - Super+F4
 "
 }
 

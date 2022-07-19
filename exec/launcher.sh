@@ -3,8 +3,10 @@
 # Dependencies:
 # - fzf
 # - bat
+# - gtk-launch
 
 cache_path=$HOME/etc/my_apps_data
+log_path="$HOME"/etc/my_apps_data/launcher.log
 apps_path=/usr/share/applications
 
 update_cache() {
@@ -15,12 +17,11 @@ update_cache() {
     for file in $files; do
         ini=$(sed -e '/^$/,$d' $apps_path/"$file") # File up to first empty line
         name=$(echo "$ini" | grep "^Name=" | cut -d '=' -f2-) # Name=
-        exe=$(echo "$ini" | grep "^Exec=" | cut -d '=' -f2- | cut -d '%' -f 1) # Exec=
-        if [ "$name" ] && [ "$exe" ]; then # If both exist
-            printf "%s : %s\n" "$name" "$exe" >> launcher.cache
+        if [ "$name" ] ; then
+            printf "%s : %s\n" "$name" "$file" >> launcher.cache
         fi
     done
-    sort -u launcher.cache -o launcher.cache
+    sort -u -t: -k1,1 launcher.cache -o launcher.cache # Unique sort by name
     printf "Launcher cache updated.\n"
 }
 
@@ -36,10 +37,11 @@ run_app() {
         --height=50%  \
         --multi \
         < "$cache_path"/launcher.cache)
-    exe=$(echo "$entry" | cut -d ':' -f 2)
-    if [ "$exe" ]; then
-        printf "Running:%s\n" "$exe"
-        $exe >> "$HOME"/etc/my_apps_data/launcher.log 2>&1 & disown
+    app_name=$(echo "$entry" | cut -d ':' -f 1)
+    desktop_file=$(echo "$entry" | cut -d ':' -f 2)
+    if [ "$app_name" ]; then
+        printf "Running: %s\n" "$app_name"
+        gtk-launch $desktop_file >> $log_path 2>&1
     fi
 }
 
