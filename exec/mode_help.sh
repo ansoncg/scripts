@@ -48,6 +48,16 @@ Steam full - Shitf+s
 "
 }
 
+command_func() {
+display_help "Command mode" "\
+Connect K380 - k
+Connect JBL T450 - j
+Connect TWS - t
+Config K380 - Shift+k
+Auto xrandr - x
+"
+}
+
 resize() {
 display_help "Resize mode" "\
 Big resize - h/j/k/l
@@ -60,6 +70,7 @@ declare -A MODES
 MODES[power]=power
 MODES[MPD]=MPD
 MODES[launch]=launch
+MODES[command]=command_func
 MODES[resize]=resize
 
 ${MODES[$1]}
