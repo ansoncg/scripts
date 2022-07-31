@@ -8,6 +8,8 @@ backup_now() {
     borg create --progress $BACKUP_PATH::backup-{now:%d-%m-%Y} \
         $HOME/files \
         $HOME/pictures \
+        $HOME/videos \
+        $HOME/music \
         $HOME/etc \
         $HOME/compile_flags.txt 
 }
