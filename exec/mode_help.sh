@@ -40,6 +40,7 @@ Keepassxc - k
 i3lock - l
 OBS - o
 Pavucontrol - p
+RSS - r
 Steam mini - s
 Webcam (qvidcap) - w
 Zathura - z

@@ -31,7 +31,7 @@ printf "\
 Backup script
 Options:
     -n, --now       Create a new backup with the current time
-    -ls, --list     List the backups
+    -l, --list     List the backups
     -c, --check     Check the backup consistency
     -h, --help      Show this help\n"
 }
@@ -39,7 +39,7 @@ Options:
 case "$1" in
     -n|--now)
         backup_now ;;
-    -ls|--list)
+    -l|--list)
         backup_list ;;
     -c|--check)
         backup_check ;;

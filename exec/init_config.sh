@@ -6,5 +6,5 @@ else
     $SCRIPTS_PATH/peripherals_config.sh -mn single
 fi
 
-xsetroot -solid "#282a36"
-$SCRIPTS_PATH/peripherals_config.sh -kb k380
+hsetroot -solid "#282a36"
+$SCRIPTS_PATH/kb_auto_connect.sh

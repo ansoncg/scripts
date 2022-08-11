@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Host name
+host=archlinux
+
 # Register controllers
 declare -A controllers
 controllers[orico]=00:1A:7D:DA:71:13 # Bluetooth dongle
@@ -21,7 +24,7 @@ associations[tws2]=orico
 
 list_connected() {
     # Get controllers to loop
-    controllers=$(printf "list" | bluetoothctl | grep anderson-pc | cut -d ' ' -f 2)
+    controllers=$(printf "list" | bluetoothctl | grep $host | cut -d ' ' -f 2)
 
     for controller in $controllers; do
         devices_paired=$(printf "select $controller \n paired-devices" | bluetoothctl | grep Device | cut -d ' ' -f 2)
@@ -74,7 +77,7 @@ else
             command_device disconnect "$2" ;;
         -i|--info)
             command_device info "$2" ;;
-        -ls|--list)
+        -l|--list)
             list_connected ;;
         -h|--help|*)
             print_help ;;

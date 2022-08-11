@@ -5,7 +5,7 @@
 # - live script
 
 play_stream() {
-    streamlink --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=100M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+    streamlink --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=300M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
     chatterino -c "$stream" 2>/dev/null &
 }
 
