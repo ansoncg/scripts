@@ -106,7 +106,7 @@ debug_explain() {
 
 # ---
 
-get_registered_apps() {
+get_registered_tasks() {
     tasks=""
     for key in "${!start[@]}"; do tasks+="${key} "; done
 }
@@ -124,7 +124,7 @@ explain_task() {
 }
 
 print_help() {
-    get_registered_apps
+    get_registered_tasks
     printf "\
 Manage the state of some applications, services and configurations
 This script is to be used on stuff that you want to turn on and off
