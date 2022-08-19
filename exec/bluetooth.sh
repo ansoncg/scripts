@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Host name
-host=archlinux
-
 # Register controllers
 declare -A controllers
 controllers[orico]=00:1A:7D:DA:71:13 # Bluetooth dongle
@@ -22,15 +19,17 @@ associations[jbl]=laptop
 associations[tws1]=laptop
 associations[tws2]=orico
 
+
 list_connected() {
     # Get controllers to loop
-    controllers=$(printf "list" | bluetoothctl | grep $host | cut -d ' ' -f 2)
+    declare controllers
+    controllers=$(printf "list" | bluetoothctl | grep "Controller" | cut -d ' ' -f 2)
 
     for controller in $controllers; do
-        devices_paired=$(printf "select $controller \n paired-devices" | bluetoothctl | grep Device | cut -d ' ' -f 2)
-        printf "Controller: $controller\n"
-        for device in $devices_paired; do
-            device_info=$(printf "select $controller \n info $device" | bluetoothctl)
+        devices_connected=$(printf "select %s \n devices Connected" "$controller" | bluetoothctl | grep Device | cut -d ' ' -f 2)
+        printf "Controller: %s \n" "$controller"
+        for device in $devices_connected; do
+            device_info=$(printf "select %s \n info %s" "$controller" "$device" | bluetoothctl)
             if echo "$device_info" | grep -q "Connected: yes"; then
                 device_alias=$(echo "$device_info" | grep "Alias" | cut -d ' ' -f 2-)
                 printf "Device: %s\n" "$device_alias"
@@ -48,11 +47,17 @@ get_registered_devices() {
 command_device() {
     if [ ${devices[$2]+_} ]; then 
         controller=${controllers[${associations[$2]}]}
-        printf "select $controller\n$1 ${devices[$2]}\n" | bluetoothctl
+        printf "select %s\n$1 ${devices[$2]}\n" "$controller" | bluetoothctl
     else 
         get_registered_devices
-        printf "Device '"$2"' not found\nRegistered devices: $devs\n"
+        printf "Device '$2' not found\nRegistered devices: %s\n" "$devs"
     fi
+}
+
+reconnect_device() {
+    command_device disconnect "$1"
+    sleep 10
+    command_device connect "$1"
 }
 
 print_help() {
@@ -62,9 +67,10 @@ Bluetooth script
 Options:
      -c, --connect     Connect a device
      -d, --disconnect  Disconnect a device
+     -r, --reconnect   Disconnect a device and reconnect after 10 seconds
      -i, --info        Get info about a device
      -l, --list        List connected devices
-     Registered devices: $devs\n"
+     Registered devices: %s\n" "$devs"
 }
 
 if [ "$(systemctl is-active "bluetooth.service")" = "inactive" ]; then
@@ -75,6 +81,8 @@ else
             command_device connect "$2" ;;
         -d|--disconnect)
             command_device disconnect "$2" ;;
+        -r|--reconnect)
+            reconnect_device "$2" ;;
         -i|--info)
             command_device info "$2" ;;
         -l|--list)

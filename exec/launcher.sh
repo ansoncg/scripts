@@ -32,7 +32,7 @@ run_app() {
         --header="Software launcher" \
         --header-first \
         --cycle --info=inline \
-        --margin=0,30%,0,0 \
+        --margin=0,0,0,0 \
         --padding=0,0,0,1 \
         --height=50%  \
         --multi \
