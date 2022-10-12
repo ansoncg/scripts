@@ -25,7 +25,7 @@ update_cache() {
     printf "Launcher cache updated.\n"
 }
 
-run_app() {
+run_launcher() {
     entry=$(
         fzf \
         --border=sharp \
@@ -41,12 +41,14 @@ run_app() {
     desktop_file=$(echo "$entry" | cut -d ':' -f 2)
     if [ "$app_name" ]; then
         printf "Running: %s\n" "$app_name"
-        gtk-launch $desktop_file >> $log_path 2>&1
+        printf "%s\n" "gtk-launch ${desktop_file:1} >> $log_path 2>&1"
+        gtk-launch "${desktop_file:1}" >> "$log_path" 2>&1
     fi
 }
 
 show_help() {
         printf "\
+Software launcher
 Options:
     -u, --update    Update cache
     -c, --cache     Show cache
@@ -65,6 +67,6 @@ case "$1" in
         show_help
         ;;
     *)
-        run_app
+        run_launcher
         ;;
 esac

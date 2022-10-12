@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Dependencies:
-# - fzf
-
 auth=$(head -1 "$HOME"/etc/my_apps_data/twitch.keys)
 id=$(tail -1 "$HOME"/etc/my_apps_data/twitch.keys)
 
@@ -47,31 +44,8 @@ print_moon_title() {
             -H "Client-ID: $id"
     )
     moon_title=$(echo "$moon_response" | jq -r '.data[].title')
-    printf "Moonmoon title: %s\n" "$moon_title"
+    printf "\nMoonmoon title: %s\n" "$moon_title"
 }
 
-play_stream() {
-    streamlink --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=800M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
-    chatterino -c "$stream" 2>/dev/null &
-}
-
-stream=$1
-quality=$2
-
-if [ -z "$quality" ]; then
-    quality="best"
-fi
-
-if [ -z "$stream" ]; then
-    stream=$(print_following_data | fzf  \
-    --border=sharp \
-    --header="Twitch launcher" \
-    --header-first \
-    --cycle --info=inline \
-    | cut -d " " -f1)
-fi
-
-if [ "$stream" ]; then
-    play_stream "$stream"
-    printf "Starting '%s' stream.\n" "$stream"
-fi
+print_following_data
+print_moon_title

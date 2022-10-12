@@ -20,9 +20,9 @@ IS_MUTED=$( echo "$DEV_DATA" | grep "Mute: yes")
 
 # Decide witch notification to send
 if [ -z "$IS_MUTED" ]; then
-    notify-send -t 1000 -u critical --app-name="toggle_mic" "MUTED " "${DEV_DESCRIPTION:1}"
+    notify-send -t 1000 -u critical --app-name="toggle_mic" "MUTED" "${DEV_DESCRIPTION:1}"
 else
-    notify-send -t 1000 --app-name="toggle_mic" "UNMUTED " "${DEV_DESCRIPTION:1}"
+    notify-send -t 1000 --app-name="toggle_mic" "UNMUTED" "${DEV_DESCRIPTION:1}"
 fi
 
 #  

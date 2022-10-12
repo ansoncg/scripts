@@ -4,7 +4,19 @@
 # - Dunst
 
 display_help() {
-    notify-send --expire-time=15000 "$1" "$(printf "$2")"
+    notify-send --expire-time=15000 "$1" "$(printf "%s" "$2")"
+}
+
+default() {
+display_help "Modes shortcuts" "\
+Command - Ctrl+Super+c
+Launch - Ctrl+Super+l
+MPD - Ctrl+Super+m
+Mouse - Ctrl+Super+j
+Numpad move - Ctrl+Super+n 
+Power - Ctrl+Super+p
+Resize - Ctrl+r
+"
 }
 
 power() {
@@ -32,20 +44,12 @@ Lofi - Shitf+l
 launch() {
 display_help "Launch mode" "\
 Kitty single - Enter
-Arandr - a
-Droidcam - d
 Firefox - f
-Gimp - g
 Keepassxc - k
 i3lock - l
-OBS - o
-Pavucontrol - p
 RSS - r
-Steam mini - s
-Webcam (qvidcap) - w
-Zathura - z
+Telegram - t
 Kitty full - Shift+Enter
-Steam full - Shitf+s
 "
 }
 
@@ -73,5 +77,6 @@ MODES[MPD]=MPD
 MODES[launch]=launch
 MODES[command]=command_func
 MODES[resize]=resize
+MODES[default]=default
 
 ${MODES[$1]}

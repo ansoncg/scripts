@@ -1,3 +1,3 @@
 #!/bin/bash
 
-steam -no-browser steam://open/minigameslist
+firejail --private~/tools/private_firejail/steam steam -no-browser steam://open/minigameslist
