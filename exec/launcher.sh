@@ -18,7 +18,7 @@ update_cache() {
         ini=$(sed -e '/^$/,$d' $apps_path/"$file") # File up to first empty line
         name=$(echo "$ini" | grep "^Name=" | cut -d '=' -f2-) # Name=
         if [ "$name" ] ; then
-            printf "%s : %s\n" "$name" "$file" >> launcher.cache
+            printf "%-40s : %s\n" "$name" "$file" >> launcher.cache
         fi
     done
     sort -u -t: -k1,1 launcher.cache -o launcher.cache # Unique sort by name
@@ -26,17 +26,21 @@ update_cache() {
 }
 
 run_launcher() {
-    entry=$(
-        fzf \
-        --border=sharp \
-        --header="Software launcher" \
-        --header-first \
-        --cycle --info=inline \
-        --margin=0,0,0,0 \
-        --padding=0,0,0,1 \
-        --height=50%  \
-        --multi \
-        < "$cache_path"/launcher.cache)
+    if [ -z "$1" ] ; then
+        entry=$(
+            fzf \
+            --border=sharp \
+            --header="Software launcher" \
+            --header-first \
+            --cycle --info=inline \
+            --margin=0,0,0,0 \
+            --padding=0,0,0,1 \
+            --height=50%  \
+            --multi \
+            < "$cache_path"/launcher.cache)
+    else 
+        entry=$(fzf -f "$1" < "$cache_path"/launcher.cache | head -n1)
+    fi
     app_name=$(echo "$entry" | cut -d ':' -f 1)
     desktop_file=$(echo "$entry" | cut -d ':' -f 2)
     if [ "$app_name" ]; then
@@ -67,6 +71,6 @@ case "$1" in
         show_help
         ;;
     *)
-        run_launcher
+        run_launcher "$1"
         ;;
 esac

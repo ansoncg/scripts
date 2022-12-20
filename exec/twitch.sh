@@ -6,8 +6,9 @@
 # - streamlink
 # - chatterino
 # - mpv
+# - glibc -> iconv
 
-auth=$(head -1 "$HOME"/etc/my_apps_data/twitch.keys)
+auth=$(head -1 "$HOME"/etc/my_apps_data/twitch.keys) # This one changes
 id=$(tail -1 "$HOME"/etc/my_apps_data/twitch.keys)
 
 cols=$(tput cols)
@@ -36,12 +37,15 @@ print_following_data() {
         ((${#game} > game_len)) && game="${game:0:game_len-1}~"
         ((${#title} > title_len)) && title="${title:0:title_len-1}~"
 
+        # game=$(echo "$game" | iconv -f UTF-8 -t ASCII//TRANSLIT)
+        # title=$(echo "$title" | iconv -f UTF-8 -t ASCII//TRANSLIT)
+
         # Print left aligned
         printf "%-${name_len}s %-${game_len}s %-${viewers_len}s %-${title_len}s\n" \
             "$name" "$game" "$viewers" "$title"
 
         # Parse json with jq
-    done < <(echo "$response" | jq -r '.data[] | (.user_name, .game_name, .title, .viewer_count)')
+    done < <(echo "$response" | jaq -r '.data[] | (.user_name, .game_name, .title, .viewer_count)')
 }
 
 print_moon_title() {
@@ -51,12 +55,12 @@ print_moon_title() {
             -H "Authorization: Bearer $auth" \
             -H "Client-ID: $id"
     )
-    moon_title=$(echo "$moon_response" | jq -r '.data[].title')
+    moon_title=$(echo "$moon_response" | jaq -r '.data[].title')
     printf "Moonmoon title: %s\n" "$moon_title"
 }
 
 play_stream() {
-    streamlink --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=800M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+    streamlink --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
     chatterino -c "$stream" 2>/dev/null &
 }
 

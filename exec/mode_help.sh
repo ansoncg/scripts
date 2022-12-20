@@ -21,10 +21,10 @@ Resize - Ctrl+r
 
 power() {
 display_help "Power mode" "\
-Shutdown - Super+F1
-Exit i3 - Super+F2 
-Reboot - Super+F3
-Lock - Super+F4
+Shutdown - 1
+Exit i3 - 2 
+Reboot - 3
+Lock - 4
 "
 }
 
@@ -44,12 +44,11 @@ Lofi - Shitf+l
 launch() {
 display_help "Launch mode" "\
 Kitty single - Enter
+Kitty full - Shift+Enter
 Firefox - f
 Keepassxc - k
-i3lock - l
-RSS - r
+Swaylock - l
 Telegram - t
-Kitty full - Shift+Enter
 "
 }
 

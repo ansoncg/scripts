@@ -18,6 +18,8 @@ print_following_data() {
 			-H "Client-ID: $id"
 	)
 
+    # printf "$response"
+
 	# Read line by line of the parsed json
 	while read -r name; do
 		read -r game
@@ -28,6 +30,9 @@ print_following_data() {
 		((${#name} > name_len)) && name="${name:0:name_len-1}~"
 		((${#game} > game_len)) && game="${game:0:game_len-1}~"
 		((${#title} > title_len)) && title="${title:0:title_len-1}~"
+
+        # game=$(echo "$game" | iconv -f UTF-8 -t ASCII//TRANSLIT)
+        # title=$(echo "$title" | iconv -f UTF-8 -t ASCII//TRANSLIT)
 
 		# Print left aligned
 		printf "%-${name_len}s %-${game_len}s %-${viewers_len}s %-${title_len}s\n" \

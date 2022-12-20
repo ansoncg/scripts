@@ -15,30 +15,51 @@ start[kdeconnect]=kdeconnect_start
 start[vm]=vm_start
 start[vcam]=vcam_start
 start[wifi]=wifi_start
+start[revtet]=revtet_start
 start[debug]=debug_start
 
 stop[kdeconnect]=kdeconnect_stop
 stop[vm]=vm_stop
 stop[vcam]=vcam_stop
 stop[wifi]=wifi_stop
+stop[revtet]=revtet_stop
 stop[debug]=debug_stop
 
 explain[kdeconnect]=kdeconnect_explain
 explain[vm]=vm_explain
 explain[vcam]=vcam_explain
 explain[wifi]=wifi_explain
+explain[revtet]=revtet_explain
 explain[debug]=debug_explain
 
 # ---
 
+revtet_start() {
+   gnirehtet run > /dev/null 2>&1 & disown 
+}
+
+revtet_stop() {
+   killall gnirehtet
+}
+
+revtet_explain() {
+   echo "Toggle reverse tethering for android"
+}
+
+# ---
+
 kdeconnect_start() {
-    systemctl --user start app-org.kde.kdeconnect.daemon@autostart.service
-    systemctl --user start mpDris2.service
+    /usr/lib/kdeconnectd > /dev/null 2>&1 & disown
+    mpDris2 > /dev/null 2>&1 & disown
+    # systemctl --user start app-org.kde.kdeconnect.daemon@autostart.service
+    # systemctl --user start mpDris2.service
 }
 
 kdeconnect_stop() {
-    systemctl --user stop app-org.kde.kdeconnect.daemon@autostart.service
-    systemctl --user stop mpDris2.service
+    killall kdeconnectd
+    killall mpDris2
+    # systemctl --user stop app-org.kde.kdeconnect.daemon@autostart.service
+    # systemctl --user stop mpDris2.service
 }
 
 kdeconnect_explain() {
@@ -106,38 +127,38 @@ debug_explain() {
 
 # ---
 
-get_registered_tasks() {
-    tasks=""
-    for key in "${!start[@]}"; do tasks+="${key} "; done
+get_registered_toggles() {
+    toggles=""
+    for key in "${!start[@]}"; do toggles+="${key} "; done
 }
 
-start_task() {
+start_toggle() {
     ${start[$1]}
 }
 
-stop_task() {
+stop_toggle() {
     ${stop[$1]}
 }
 
-explain_task() {
+explain_toggle() {
     ${explain[$1]}
 }
 
 print_help() {
-    get_registered_tasks
+    get_registered_toggles
     printf "\
-Manage the state of some applications, services and configurations
+Manage the toggle of some applications, services and configurations
 This script is to be used on stuff that you want to turn on and off
 
 Options:
     -h, --help            Print this help
 
     Operations
-        -s, --start <task>    Start task
-        -x, --stop <task>     Stop task
-        -e, --explain <task>  Explain task
+        -s, --start <toggle>    Start task
+        -x, --stop <toggle>     Stop task
+        -e, --explain <toggle>  Explain task
 
-Registerd tasks: %s\n" "$tasks"
+Registerd toggles: %s\n" "$toggles"
 }
 
 print_error() {
@@ -147,10 +168,10 @@ print_error() {
             printf "Invalid number of arguments -> '%s'\n" "$2" ;;
         operation)
             printf "Invalid operation -> '%s'\n" "$2" ;;
-        task)
-            printf "Invalid task -> '%s'\n" "$2" ;;
+        toggle)
+            printf "Invalid toggle -> '%s'\n" "$2" ;;
         empty)
-            printf "No task specified -> '%s'\n" "$2" ;;
+            printf "No toggle specified -> '%s'\n" "$2" ;;
     esac
 }
 
@@ -177,17 +198,17 @@ case $# in
     "2")
         case "$1" in
             -s|--start)
-                operation=start_task ;;
+                operation=start_toggle ;;
             -x|--stop)
-                operation=stop_task  ;;
+                operation=stop_toggle  ;;
             -e|--explain)
-                operation=explain_task ;;
+                operation=explain_toggle ;;
             *)
                 print_error operation "$1"
                 exit
         esac
         if [ -z ${start[$2]+_} ]; then 
-            print_error task "$2"
+            print_error toggle "$2"
             exit
         fi
         $operation "$2"
