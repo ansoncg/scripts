@@ -1,17 +1,20 @@
 #!/bin/bash
 
-# Dependencies"
+# Dependencies
 # - fzf
 # - json parser with jq syntax
 
 # CONFIG ----
-parser=jaq # JSON parser
-bin_path=$SCRIPTS_PATH
-menus_path="/home/anderson/etc/my_apps_data/control_menus"
+parser=
+bin_path=
+menus_path=
+
+config_path="/home/anderson/etc/my_apps_data/menu.conf"
+eval "$(cat "$config_path")"
 
 # -----------
 
-# VARIBLES -----------
+# VARIABLES -----------
 index=0
 cols=$(tput cols) # Terminal cols
 space=$(((cols / 2) - 15))
@@ -24,13 +27,20 @@ declare -A is_redirected
 
 print_help() {
 	printf "\
-TODO: help\n"
+Control menu
+Options:
+    -h, --help      Show this help
+    -r, --reopen    Open last used menu file
+    -l, --list      List the menu json files
+    -s, --string    Input is a json string, not a file 
+"
 }
 
 parse_command_line() {
 	case $# in
 	"0")
-		menu_json=$(cat $menus_path/root.json)
+		menu_json=$(cat "$menus_path"/root.json)
+        ln -sf "$menus_path"/root.json /tmp/menu_last
 		;;
 	"1")
 		case "$1" in
@@ -38,14 +48,26 @@ parse_command_line() {
 			print_help
 			exit 0
 			;;
+        -r | --reopen) # Open last used menu file
+            if [ -f /tmp/menu_last ]; then
+                menu_json=$(cat /tmp/menu_last)
+            else
+                menu_json=$(cat "$menus_path"/root.json)
+            fi
+            ;;
+        -l | --list)
+            ls "$menus_path"
+            exit 0
+            ;;
 		*)
-			menu_json=$(cat $menus_path/"$1")
+			menu_json=$(cat "$menus_path"/"$1".json)
+            ln -sf "$menus_path"/"$1".json /tmp/menu_last
 			;;
 		esac
 		;;
 	"2")
 		case "$1" in
-		--submenu)
+		-s | --string)
 			menu_json="$2" # Input is a string
 			;;
 		esac
@@ -73,6 +95,10 @@ json_parse_show() {
 
 			type["$index"]="command" # Set the option type
 			run["$index"]=$execute   # Set the command to run
+
+            if [ -z "$help" ]; then
+                help="$menus_path/placeholder.md"
+            fi
 
 			# Truncate fields
 			label=$(truncate_string "$label")
@@ -133,7 +159,7 @@ json_parse_show() {
 
 			# Add line to print to the result
 			printf -v temp_string "| %s | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "Menu" "$label" "" "$menus_path/$direction"
+				"$index" "Menu" "$label" "" "$menus_path/$direction.json"
 			result+=$temp_string
 		done
 
@@ -170,7 +196,7 @@ execute_option() {
 	if [ "$choice" ]; then
 		case "${type["$choice"]}" in
 		"command")
-			${run[$choice]}
+			exec bash -c "${run[$choice]}"
 			;;
 		"file")
 			${run[$choice]}
@@ -179,7 +205,7 @@ execute_option() {
 			if [ "${is_redirected["$choice"]}" == true ]; then
 				exec "$bin_path"/control_parser.sh "${run["$choice"]}"
 			else
-				exec "$bin_path"/control_parser.sh --submenu "${run["$choice"]}"
+				exec "$bin_path"/control_parser.sh --string "${run["$choice"]}"
 			fi
 			;;
 		*) ;;
