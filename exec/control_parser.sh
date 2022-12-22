@@ -5,12 +5,13 @@
 # - json parser with jq syntax
 
 # CONFIG ----
-parser=
-bin_path=
-menus_path=
+parser=jaq
+bin_path=$SCRIPTS_PATH
+menus_path="/home/anderson/etc/my_apps_data/control_menu"
 
-config_path="/home/anderson/etc/my_apps_data/menu.conf"
-eval "$(cat "$config_path")"
+# Or a config file
+# config_path="/home/anderson/etc/my_apps_data/menu.conf"
+# eval "$(cat "$config_path")"
 
 # -----------
 
@@ -20,7 +21,7 @@ cols=$(tput cols) # Terminal cols
 space=$(((cols / 2) - 15))
 
 declare -A run
-declare -A type
+declare -A opt_type
 declare -A is_redirected
 
 # -----------
@@ -40,7 +41,7 @@ parse_command_line() {
 	case $# in
 	"0")
 		menu_json=$(cat "$menus_path"/root.json)
-        ln -sf "$menus_path"/root.json /tmp/menu_last
+		ln -sf "$menus_path"/root.json /tmp/menu_last
 		;;
 	"1")
 		case "$1" in
@@ -48,20 +49,20 @@ parse_command_line() {
 			print_help
 			exit 0
 			;;
-        -r | --reopen) # Open last used menu file
-            if [ -f /tmp/menu_last ]; then
-                menu_json=$(cat /tmp/menu_last)
-            else
-                menu_json=$(cat "$menus_path"/root.json)
-            fi
-            ;;
-        -l | --list)
-            ls "$menus_path"
-            exit 0
-            ;;
+		-r | --reopen) # Open last used menu file
+			if [ -f /tmp/menu_last ]; then
+				menu_json=$(cat /tmp/menu_last)
+			else
+				menu_json=$(cat "$menus_path"/root.json)
+			fi
+			;;
+		-l | --list)
+			ls "$menus_path"
+			exit 0
+			;;
 		*)
 			menu_json=$(cat "$menus_path"/"$1".json)
-            ln -sf "$menus_path"/"$1".json /tmp/menu_last
+			ln -sf "$menus_path"/"$1".json /tmp/menu_last
 			;;
 		esac
 		;;
@@ -84,6 +85,7 @@ truncate_string() {
 json_parse_show() {
 	while read -r start_end; do
 
+        # COMMAND
 		command_len=$start_end
 		for _ in $(seq 1 "$command_len"); do
 			index=$((index + 1)) # Counter
@@ -91,14 +93,15 @@ json_parse_show() {
 			# Read 'command' attributes from json
 			read -r label
 			read -r execute
-			read -r help
+			read -r help # Can be a file or a string
 
-			type["$index"]="command" # Set the option type
-			run["$index"]=$execute   # Set the command to run
+			opt_type["$index"]="command" # Set the option type
+			run["$index"]=$execute       # Set the command to run
 
-            if [ -z "$help" ]; then
-                help="$menus_path/placeholder.md"
-            fi
+			# Show this if there's no help set
+			if [ -z "$help" ]; then
+				help="Nothing to show"
+			fi
 
 			# Truncate fields
 			label=$(truncate_string "$label")
@@ -110,28 +113,35 @@ json_parse_show() {
 			result+=$temp_string
 		done
 
-		read -r file_len
-		for _ in $(seq 1 "$file_len"); do
+        # TEXT
+		read -r text_len
+		for _ in $(seq 1 "$text_len"); do
 			index=$((index + 1))
 
-			# Read 'file' attributes from json
+			# Read 'text' attributes from json
 			read -r label
-			read -r path
-			file=$(basename "$path") # Only filename
+			read -r content
 
-			type["$index"]="file"         # Set the option type
-			run["$index"]="$EDITOR $path" # Set the command to run
+            if [ -f "$content" ]; then
+                info="file: $(basename "$content")" # Only filename. The content is a file.
+                run["$index"]="$EDITOR $content" # Set the command to run
+            else
+                info="string: $content" # The content is a string
+                run["$index"]="echo $content" # Set the command to run
+            fi
+			opt_type["$index"]="text"     # Set the option type
 
 			# Truncate fields
 			label=$(truncate_string "$label")
-			file=$(truncate_string "$file")
+			info=$(truncate_string "$info")
 
 			# Add line to print to the result
 			printf -v temp_string "| %s | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "File" "$label" "$file" "$path"
+				"$index" "Text" "$label" "$info" "$content"
 			result+=$temp_string
 		done
 
+        # MENU
 		read -r menu_len
 		for _ in $(seq 1 "$menu_len"); do
 			index=$((index + 1))
@@ -141,8 +151,8 @@ json_parse_show() {
 			read -r direction
 			read -r json
 
-			# Set the option type
-			type["$index"]="menu"
+			# Set the option opt_type
+			opt_type["$index"]="menu"
 
 			# Truncate fields
 			label=$(truncate_string "$label")
@@ -151,7 +161,7 @@ json_parse_show() {
 			if [ "$direction" == null ] || [ -z "$direction" ]; then
 				is_redirected["$index"]=false
 				run["$index"]="$json"
-				direction="placeholder.md"
+				direction="empty"
 			else
 				is_redirected["$index"]=true
 				run["$index"]="$direction"
@@ -166,7 +176,7 @@ json_parse_show() {
 		# Parse JSON
 	done < <($parser -rc \
 		'(.command | length , (.[] | .label, .execute, .help))
-        ,(.file | length , (.[] | .label, .path)) 
+        ,(.text | length , (.[] | .label, .content)) 
         ,(.menu | length , (.[] | .label, .direction, .))' \
 		<<<"$menu_json")
 }
@@ -176,7 +186,11 @@ pick_option() {
 		echo -e "${result::-1}" | fzf \
 			--delimiter='\|' \
 			--with-nth=..-2 \
-			--preview="cat {-1}" \
+			--preview=" if [ -f {-1} ]; then
+                            cat {-1}
+                        else 
+                            echo {-1}
+                        fi " \
 			--preview-window up \
 			--preview-window 60% \
 			--preview-window border-sharp \
@@ -194,11 +208,11 @@ pick_option() {
 
 execute_option() {
 	if [ "$choice" ]; then
-		case "${type["$choice"]}" in
+		case "${opt_type["$choice"]}" in
 		"command")
 			exec bash -c "${run[$choice]}"
 			;;
-		"file")
+		"text")
 			${run[$choice]}
 			;;
 		"menu")
