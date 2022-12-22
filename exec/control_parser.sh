@@ -34,6 +34,7 @@ Options:
     -r, --reopen    Open last used menu file
     -l, --list      List the menu json files
     -s, --string    Input is a json string, not a file 
+    -p, --parse     Only parse and show the menu file
 "
 }
 
@@ -71,6 +72,12 @@ parse_command_line() {
 		-s | --string)
 			menu_json="$2" # Input is a string
 			;;
+        -p | --parse)
+			menu_json=$(cat "$menus_path"/"$2".json)
+            json_parse_show
+            echo -e "${result::-1}" | rev | cut -d '|' -f 2- | rev
+            exit 0
+            ;;
 		esac
 		;;
 	esac
@@ -85,8 +92,9 @@ truncate_string() {
 json_parse_show() {
 	while read -r start_end; do
 
-        # COMMAND
-		command_len=$start_end
+		# COMMAND
+		title=$start_end
+		read -r command_len
 		for _ in $(seq 1 "$command_len"); do
 			index=$((index + 1)) # Counter
 
@@ -113,7 +121,7 @@ json_parse_show() {
 			result+=$temp_string
 		done
 
-        # TEXT
+		# TEXT
 		read -r text_len
 		for _ in $(seq 1 "$text_len"); do
 			index=$((index + 1))
@@ -122,14 +130,14 @@ json_parse_show() {
 			read -r label
 			read -r content
 
-            if [ -f "$content" ]; then
-                info="file: $(basename "$content")" # Only filename. The content is a file.
-                run["$index"]="$EDITOR $content" # Set the command to run
-            else
-                info="string: $content" # The content is a string
-                run["$index"]="echo $content" # Set the command to run
-            fi
-			opt_type["$index"]="text"     # Set the option type
+			if [ -f "$content" ]; then
+				info="file: $(basename "$content")" # Only filename. The content is a file.
+				run["$index"]="$EDITOR $content"    # Set the command to run
+			else
+				info="string: $content"       # The content is a string
+				run["$index"]="echo $content" # Set the command to run
+			fi
+			opt_type["$index"]="text" # Set the option type
 
 			# Truncate fields
 			label=$(truncate_string "$label")
@@ -141,7 +149,7 @@ json_parse_show() {
 			result+=$temp_string
 		done
 
-        # MENU
+		# MENU
 		read -r menu_len
 		for _ in $(seq 1 "$menu_len"); do
 			index=$((index + 1))
@@ -149,6 +157,7 @@ json_parse_show() {
 			# Read 'menu' attributes from json
 			read -r label
 			read -r direction
+            read -r level
 			read -r json
 
 			# Set the option opt_type
@@ -169,15 +178,16 @@ json_parse_show() {
 
 			# Add line to print to the result
 			printf -v temp_string "| %s | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "Menu" "$label" "" "$menus_path/$direction.json"
+				"$index" "Menu" "$label" "$level" "$menus_path/$direction.json"
 			result+=$temp_string
 		done
 
 		# Parse JSON
 	done < <($parser -rc \
-		'(.command | length , (.[] | .label, .execute, .help))
+        '(.label)
+		,(.command | length , (.[] | .label, .execute, .help))
         ,(.text | length , (.[] | .label, .content)) 
-        ,(.menu | length , (.[] | .label, .direction, .))' \
+        ,(.menu | length , (.[] | .label, .direction, .level, .))' \
 		<<<"$menu_json")
 }
 
@@ -186,7 +196,9 @@ pick_option() {
 		echo -e "${result::-1}" | fzf \
 			--delimiter='\|' \
 			--with-nth=..-2 \
-			--preview=" if [ -f {-1} ]; then
+			--preview=" if [ {3} == Menu ]; then
+                            $bin_path/control_parser.sh --parse $direction
+                        elif [ -f {-1} ]; then
                             cat {-1}
                         else 
                             echo {-1}
@@ -197,7 +209,7 @@ pick_option() {
 			--preview-window wrap \
 			--cycle --info=inline \
 			--border=sharp \
-			--header="Control menu" \
+			--header="Control menu - $title" \
 			--header-first \
 			--margin=0,0,0,0 \
 			--padding=0,0,0,1 \
