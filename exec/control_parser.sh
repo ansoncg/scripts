@@ -72,15 +72,32 @@ parse_command_line() {
 		-s | --string)
 			menu_json="$2" # Input is a string
 			;;
-        -p | --parse)
+		-p | --parse)
 			menu_json=$(cat "$menus_path"/"$2".json)
-            json_parse_show
-            echo -e "${result::-1}" | rev | cut -d '|' -f 2- | rev
-            exit 0
-            ;;
+			json_parse_show
+			echo -e "${result::-1}" | rev | cut -d '|' -f 2- | rev
+			exit 0
+			;;
+        --stringparse)
+			menu_json="$2" # Input is a string
+			json_parse_show
+			echo -e "${result::-1}" | rev | cut -d '|' -f 2- | rev
+			exit 0
+			;;
+		*)
+            error
+			;;
 		esac
 		;;
+	*)
+        error
+		;;
 	esac
+}
+
+error() {
+    print_help
+    exit 1
 }
 
 truncate_string() {
@@ -116,7 +133,7 @@ json_parse_show() {
 			execute=$(truncate_string "$execute")
 
 			# Add line to print to the result
-			printf -v temp_string "| %s | %-7s | %-${space}s | %-${space}s | %s \n" \
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | %s \n" \
 				"$index" "Command" "$label" "$execute" "$help"
 			result+=$temp_string
 		done
@@ -144,7 +161,7 @@ json_parse_show() {
 			info=$(truncate_string "$info")
 
 			# Add line to print to the result
-			printf -v temp_string "| %s | %-7s | %-${space}s | %-${space}s | %s \n" \
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | %s \n" \
 				"$index" "Text" "$label" "$info" "$content"
 			result+=$temp_string
 		done
@@ -157,7 +174,7 @@ json_parse_show() {
 			# Read 'menu' attributes from json
 			read -r label
 			read -r direction
-            read -r level
+			read -r level
 			read -r json
 
 			# Set the option opt_type
@@ -170,21 +187,21 @@ json_parse_show() {
 			if [ "$direction" == null ] || [ -z "$direction" ]; then
 				is_redirected["$index"]=false
 				run["$index"]="$json"
-				direction="empty"
+				direction="$json"
 			else
 				is_redirected["$index"]=true
 				run["$index"]="$direction"
 			fi
 
 			# Add line to print to the result
-			printf -v temp_string "| %s | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "Menu" "$label" "$level" "$menus_path/$direction.json"
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | %s \n" \
+				"$index" "Menu" "$label" "$level" "$direction"
 			result+=$temp_string
 		done
 
 		# Parse JSON
 	done < <($parser -rc \
-        '(.label)
+		'(.label)
 		,(.command | length , (.[] | .label, .execute, .help))
         ,(.text | length , (.[] | .label, .content)) 
         ,(.menu | length , (.[] | .label, .direction, .level, .))' \
@@ -197,7 +214,12 @@ pick_option() {
 			--delimiter='\|' \
 			--with-nth=..-2 \
 			--preview=" if [ {3} == Menu ]; then
-                            $bin_path/control_parser.sh --parse $direction
+                            if [ -f \"$menus_path\"/{-1}.json ]; then
+                                \"$bin_path\"/control_parser.sh --parse {-1}
+                            else
+                                echo Nothing
+                                # \"$bin_path\"/control_parser.sh --stringparse {-1}
+                            fi
                         elif [ -f {-1} ]; then
                             cat {-1}
                         else 
@@ -207,7 +229,8 @@ pick_option() {
 			--preview-window 60% \
 			--preview-window border-sharp \
 			--preview-window wrap \
-			--cycle --info=inline \
+			--cycle \
+			--info=inline \
 			--border=sharp \
 			--header="Control menu - $title" \
 			--header-first \
@@ -220,6 +243,11 @@ pick_option() {
 
 execute_option() {
 	if [ "$choice" ]; then
+
+		# shellcheck disable=SC2001
+		# choice=$(echo "$choice" | sed 's/^0*//')
+		choice=${choice/#0/} # 1~99 only
+
 		case "${opt_type["$choice"]}" in
 		"command")
 			exec bash -c "${run[$choice]}"
