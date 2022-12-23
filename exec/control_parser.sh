@@ -19,6 +19,7 @@ menus_path="/home/anderson/etc/my_apps_data/control_menu"
 index=0
 cols=$(tput cols) # Terminal cols
 space=$(((cols / 2) - 15))
+delim="+@!#" # Something hard to appear on a file
 
 declare -A run
 declare -A opt_type
@@ -30,19 +31,24 @@ print_help() {
 	printf "\
 Control menu
 Options:
-    -h, --help      Show this help
-    -r, --reopen    Open last used menu file
-    -l, --list      List the menu json files
-    -s, --string    Input is a json string, not a file 
-    -p, --parse     Only parse and show the menu file
+    -h, --help          Show this help.
+    -r, --reopen        Open last used menu file.
+    -l, --list          List the menu json files.
+    -p, --parse         Only parse and show the menu file.
+    --recursive         Process a submenu inside a menu. Internal use.
+    --recursiveparse    The 'recursive' and 'parse' options together. Internal use.
 "
 }
 
 parse_command_line() {
 	case $# in
 	"0")
-		menu_json=$(cat "$menus_path"/root.json)
-		ln -sf "$menus_path"/root.json /tmp/menu_last
+		if [ -f "$menus_path"/root.json ]; then
+			menu_json=$(cat "$menus_path"/root.json)
+			ln -sf "$menus_path"/root.json /tmp/menu_last
+		else
+			error 2
+		fi
 		;;
 	"1")
 		case "$1" in
@@ -62,48 +68,67 @@ parse_command_line() {
 			exit 0
 			;;
 		*)
-			menu_json=$(cat "$menus_path"/"$1".json)
-			ln -sf "$menus_path"/"$1".json /tmp/menu_last
+			if [ -f "$menus_path"/"$1".json ]; then
+				menu_json=$(cat "$menus_path"/"$1".json)
+				ln -sf "$menus_path"/"$1".json /tmp/menu_last
+			else
+				error 3 "$1"
+			fi
 			;;
 		esac
 		;;
 	"2")
 		case "$1" in
-		-s | --string)
-			menu_json="$2" # Input is a string
-			;;
 		-p | --parse)
 			menu_json=$(cat "$menus_path"/"$2".json)
-			json_parse_show
-			echo -e "${result::-1}" | rev | cut -d '|' -f 2- | rev
-			exit 0
+			menu_preview
 			;;
-        --stringparse)
+		--recursive)
 			menu_json="$2" # Input is a string
-			json_parse_show
-			echo -e "${result::-1}" | rev | cut -d '|' -f 2- | rev
-			exit 0
+			;;
+		--recursiveparse)
+			menu_json="$2" # Input is a string
+			menu_preview
 			;;
 		*)
-            error
+			error 1
 			;;
 		esac
 		;;
 	*)
-        error
+		error 1
 		;;
 	esac
 }
 
 error() {
-    print_help
-    exit 1
+	case "$1" in
+	1)
+		echo "Wrong arguments"
+		exit 1
+		;;
+	2)
+		echo "No root file found"
+		exit 2
+		;;
+    3)
+        echo "No '$1.json' found at '$menus_path'"
+        exit 3
+        ;;
+	esac
 }
 
 truncate_string() {
 	string=$1
 	((${#string} > space)) && string="${string:0:space-1}~"
 	echo "$string"
+}
+
+menu_preview() {
+	space=$((space + 4))
+	json_parse_show
+	echo -e "${result::-1}" | awk -F $delim '{print $1}'
+	exit 0
 }
 
 json_parse_show() {
@@ -132,9 +157,9 @@ json_parse_show() {
 			label=$(truncate_string "$label")
 			execute=$(truncate_string "$execute")
 
-			# Add line to print to the result
-			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "Command" "$label" "$execute" "$help"
+			# Add line to print to the result. Eveything after the first delim is not shown.
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | $delim%s$delim%s$delim%s\n" \
+				"$index" "Command" "$label" "$execute" "$index" "Command" "$help"
 			result+=$temp_string
 		done
 
@@ -160,9 +185,9 @@ json_parse_show() {
 			label=$(truncate_string "$label")
 			info=$(truncate_string "$info")
 
-			# Add line to print to the result
-			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "Text" "$label" "$info" "$content"
+			# Add line to print to the result. Eveything after the first delim is not shown.
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | $delim%s$delim%s$delim%s\n" \
+				"$index" "Text" "$label" "$info" "$index" "Text" "$content"
 			result+=$temp_string
 		done
 
@@ -193,9 +218,9 @@ json_parse_show() {
 				run["$index"]="$direction"
 			fi
 
-			# Add line to print to the result
-			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | %s \n" \
-				"$index" "Menu" "$label" "$level" "$direction"
+			# Add line to print to the result. Eveything after the first delim is not shown.
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | $delim%s$delim%s$delim%s\n" \
+				"$index" "Menu" "$label" "$level" "$index" "Menu" "$direction"
 			result+=$temp_string
 		done
 
@@ -211,14 +236,13 @@ json_parse_show() {
 pick_option() {
 	entry=$(
 		echo -e "${result::-1}" | fzf \
-			--delimiter='\|' \
-			--with-nth=..-2 \
-			--preview=" if [ {3} == Menu ]; then
+			--delimiter=$delim \
+			--with-nth=1 \
+			--preview=" if [ {-2} == Menu ]; then
                             if [ -f \"$menus_path\"/{-1}.json ]; then
                                 \"$bin_path\"/control_parser.sh --parse {-1}
                             else
-                                echo Nothing
-                                # \"$bin_path\"/control_parser.sh --stringparse {-1}
+                                \"$bin_path\"/control_parser.sh --recursiveparse {-1}
                             fi
                         elif [ -f {-1} ]; then
                             cat {-1}
@@ -236,18 +260,16 @@ pick_option() {
 			--header-first \
 			--margin=0,0,0,0 \
 			--padding=0,0,0,1 \
+			--ellipsis="" \
 			--tac
 	)
-	choice=$(echo "$entry" | cut -d ' ' -f2)
+	if [ "$entry" ]; then
+		choice=$(echo "$entry" | awk -F $delim '{print $(NF-2)}')
+	fi
 }
 
 execute_option() {
 	if [ "$choice" ]; then
-
-		# shellcheck disable=SC2001
-		# choice=$(echo "$choice" | sed 's/^0*//')
-		choice=${choice/#0/} # 1~99 only
-
 		case "${opt_type["$choice"]}" in
 		"command")
 			exec bash -c "${run[$choice]}"
@@ -259,7 +281,7 @@ execute_option() {
 			if [ "${is_redirected["$choice"]}" == true ]; then
 				exec "$bin_path"/control_parser.sh "${run["$choice"]}"
 			else
-				exec "$bin_path"/control_parser.sh --string "${run["$choice"]}"
+				exec "$bin_path"/control_parser.sh --recursive "${run["$choice"]}"
 			fi
 			;;
 		*) ;;
