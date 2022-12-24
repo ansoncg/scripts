@@ -105,17 +105,15 @@ error() {
 	case "$1" in
 	1)
 		echo "Wrong arguments"
-		exit 1
 		;;
 	2)
 		echo "No root file found"
-		exit 2
 		;;
-    3)
-        echo "No '$1.json' found at '$menus_path'"
-        exit 3
-        ;;
+	3)
+		echo "No '$2.json' found at '$menus_path'"
+		;;
 	esac
+    exit "$1"
 }
 
 truncate_string() {
@@ -238,17 +236,6 @@ pick_option() {
 		echo -e "${result::-1}" | fzf \
 			--delimiter=$delim \
 			--with-nth=1 \
-			--preview=" if [ {-2} == Menu ]; then
-                            if [ -f \"$menus_path\"/{-1}.json ]; then
-                                \"$bin_path\"/control_parser.sh --parse {-1}
-                            else
-                                \"$bin_path\"/control_parser.sh --recursiveparse {-1}
-                            fi
-                        elif [ -f {-1} ]; then
-                            cat {-1}
-                        else 
-                            echo {-1}
-                        fi " \
 			--preview-window up \
 			--preview-window 60% \
 			--preview-window border-sharp \
@@ -261,7 +248,18 @@ pick_option() {
 			--margin=0,0,0,0 \
 			--padding=0,0,0,1 \
 			--ellipsis="" \
-			--tac
+			--tac \
+			--preview=" if [ {-2} == Menu ]; then
+                            if [ -f \"$menus_path\"/{-1}.json ]; then
+                                \"$bin_path\"/control_parser.sh --parse {-1}
+                            else
+                                \"$bin_path\"/control_parser.sh --recursiveparse {-1}
+                            fi
+                        elif [ -f {-1} ]; then
+                            cat {-1}
+                        else 
+                            echo {-1}
+                        fi "
 	)
 	if [ "$entry" ]; then
 		choice=$(echo "$entry" | awk -F $delim '{print $(NF-2)}')
