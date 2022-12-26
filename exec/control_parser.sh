@@ -1,10 +1,15 @@
 #!/bin/bash
 
-# Dependencies
+# Dependencies -|-|-|-
 # - fzf
 # - json parser with jq syntax
 
-# CONFIG ----
+# Optional
+# - ripgrep
+
+# -----------
+
+# CONFIG -|-|-|-
 parser=jaq
 bin_path=$SCRIPTS_PATH
 menus_path="/home/anderson/etc/my_apps_data/control_menu"
@@ -15,7 +20,7 @@ menus_path="/home/anderson/etc/my_apps_data/control_menu"
 
 # -----------
 
-# VARIABLES -----------
+# VARIABLES -|-|-|-
 index=0
 cols=$(tput cols) # Terminal cols
 space=$(((cols / 2) - 15))
@@ -27,19 +32,6 @@ declare -A is_redirected
 
 # -----------
 
-print_help() {
-	printf "\
-Control menu
-Options:
-    -h, --help          Show this help.
-    -r, --reopen        Open last used menu file.
-    -l, --list          List the menu json files.
-    -p, --parse         Only parse and show the menu file.
-    --recursive         Process a submenu inside a menu. Internal use.
-    --recursiveparse    The 'recursive' and 'parse' options together. Internal use.
-"
-}
-
 parse_command_line() {
 	case $# in
 	"0")
@@ -49,12 +41,12 @@ parse_command_line() {
 		else
 			error 2
 		fi
+		execute_menu
 		;;
 	"1")
 		case "$1" in
 		-h | --help)
 			print_help
-			exit 0
 			;;
 		-r | --reopen) # Open last used menu file
 			if [ -f /tmp/menu_last ]; then
@@ -62,10 +54,10 @@ parse_command_line() {
 			else
 				menu_json=$(cat "$menus_path"/root.json)
 			fi
+			execute_menu
 			;;
 		-l | --list)
-			ls "$menus_path"
-			exit 0
+            list_menus
 			;;
 		*)
 			if [ -f "$menus_path"/"$1".json ]; then
@@ -74,6 +66,7 @@ parse_command_line() {
 			else
 				error 3 "$1"
 			fi
+			execute_menu
 			;;
 		esac
 		;;
@@ -83,8 +76,12 @@ parse_command_line() {
 			menu_json=$(cat "$menus_path"/"$2".json)
 			menu_preview
 			;;
+		-s | --search)
+			grep_search "$2"
+			;;
 		--recursive)
 			menu_json="$2" # Input is a string
+			execute_menu
 			;;
 		--recursiveparse)
 			menu_json="$2" # Input is a string
@@ -99,6 +96,21 @@ parse_command_line() {
 		error 1
 		;;
 	esac
+}
+
+print_help() {
+	printf "\
+Control menu
+Options:
+    -h, --help          Show this help.
+    -r, --reopen        Open last used menu file.
+    -l, --list          List the menu json files.
+    -p, --parse         Only parse and show the menu file.
+    -s, --search        Grep search all menu files and content they point to.
+    --recursive         Process a submenu inside a menu. Internal use.
+    --recursiveparse    The 'recursive' and 'parse' options together. Internal use.
+"
+	exit 0
 }
 
 error() {
@@ -236,7 +248,7 @@ pick_option() {
 		echo -e "${result::-1}" | fzf \
 			--delimiter=$delim \
 			--with-nth=1 \
-            --no-hscroll \
+			--no-hscroll \
 			--preview-window up \
 			--preview-window 60% \
 			--preview-window border-sharp \
@@ -288,11 +300,38 @@ execute_option() {
 	fi
 }
 
-main() {
-	parse_command_line "$@"
+execute_menu() {
 	json_parse_show
 	pick_option
 	execute_option
 }
 
-main "$@"
+list_menus() {
+    ls "$menus_path"
+    exit 0
+}
+
+grep_search() {
+	files=$(ls $menus_path)
+	file_list=""
+
+	for file in $files; do
+		menu_json=$(cat "$menus_path/$file")
+		file_list+="$menus_path/$file\n"
+		while read -r text_len; do
+			for _ in $(seq 1 "$text_len"); do
+				read -r content
+				if [ -f "$content" ]; then
+					file_list+="$content\n"
+				fi
+			done
+		done < <($parser -rc \
+			'(.text | length , (.[] | .content))' \
+			<<<"$menu_json")
+	done
+	file_list=$(echo -e "$file_list" | sort -u)
+	rg --column --line-number --color=always --smart-case --context 1 "$1" $file_list
+	exit 0
+}
+
+parse_command_line "$@"
