@@ -19,7 +19,7 @@ menus_path="/home/anderson/etc/my_apps_data/control_menu"
 index=0
 cols=$(tput cols) # Terminal cols
 space=$(((cols / 2) - 15))
-delim="+@!#" # Something hard to appear on a file
+delim="+@!#" # Something hard to appear in a file
 
 declare -A run
 declare -A opt_type
@@ -113,7 +113,7 @@ error() {
 		echo "No '$2.json' found at '$menus_path'"
 		;;
 	esac
-    exit "$1"
+	exit "$1"
 }
 
 truncate_string() {
@@ -123,7 +123,7 @@ truncate_string() {
 }
 
 menu_preview() {
-	space=$((space + 4))
+	space=$((space + 3))
 	json_parse_show
 	echo -e "${result::-1}" | awk -F $delim '{print $1}'
 	exit 0
@@ -171,10 +171,10 @@ json_parse_show() {
 			read -r content
 
 			if [ -f "$content" ]; then
-				info="file: $(basename "$content")" # Only filename. The content is a file.
-				run["$index"]="$EDITOR $content"    # Set the command to run
+				info="$(basename "$content")"    # Only the file name. The content is a file.
+				run["$index"]="$EDITOR $content" # Set the command to run
 			else
-				info="string: $content"       # The content is a string
+				info="$content"               # The content is a string
 				run["$index"]="echo $content" # Set the command to run
 			fi
 			opt_type["$index"]="text" # Set the option type
@@ -236,6 +236,7 @@ pick_option() {
 		echo -e "${result::-1}" | fzf \
 			--delimiter=$delim \
 			--with-nth=1 \
+            --no-hscroll \
 			--preview-window up \
 			--preview-window 60% \
 			--preview-window border-sharp \
