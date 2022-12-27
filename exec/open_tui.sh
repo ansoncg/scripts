@@ -8,6 +8,6 @@ if [[ ! -e $loc ]]; then
 fi
 
 # notify-send "Debug"
-i3-msg exec 'kitty --single-instance '$tool' "'$loc'"'
+swaymsg exec "kitty --single-instance $tool $loc"
 
 # https://github.com/ranger/ranger/wiki/Open-Ranger-from-Desktop

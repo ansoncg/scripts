@@ -57,7 +57,7 @@ parse_command_line() {
 			execute_menu
 			;;
 		-l | --list)
-            list_menus
+			list_menus
 			;;
 		*)
 			if [ -f "$menus_path"/"$1".json ]; then
@@ -307,8 +307,8 @@ execute_menu() {
 }
 
 list_menus() {
-    ls "$menus_path"
-    exit 0
+	ls "$menus_path"
+	exit 0
 }
 
 grep_search() {

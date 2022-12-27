@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# Dependencies:
+# - sway
+# - jq or similar
+
 PADDING=0
 
 while read -r height; read -r width; do
@@ -26,14 +30,3 @@ case "$1" in
 esac
 
 swaymsg move absolute position "$NEW_X" "$NEW_Y"
-
-# For xorg --
-
-# eval "$(xdotool getwindowfocus getdisplaygeometry --shell)"
-# DISPLAY_WIDTH=$WIDTH
-# DISPLAY_HEIGHT=$HEIGHT
-# eval "$(xdotool getwindowfocus getwindowgeometry --shell)"
-
-# ~ switch-case ~ 
-
-# i3-msg move position "$NEW_X" "$NEW_Y"
