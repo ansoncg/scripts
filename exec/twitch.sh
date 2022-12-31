@@ -6,7 +6,6 @@
 # - streamlink
 # - chatterino
 # - mpv
-# - glibc -> iconv
 
 auth=""
 id=""
@@ -17,7 +16,7 @@ name_len=20
 game_len=25
 viewers_len=7
 right_pad=10
-title_len=$((cols - name_len - game_len - viewers_len - right_pad))
+title_len=$((cols - name_len - game_len - viewers_len - right_pad + 3))
 
 print_following_data() {
 	# My channel request (Bucaco id=52363379)
@@ -33,16 +32,20 @@ print_following_data() {
 		read -r title
 		read -r viewers
 
+        # Remove non ascii from title
+        # title=$(echo "$title" | LC_ALL=C sed 's/[\d128-\d255]//g')
+
 		# Truncate strings
 		((${#name} > name_len)) && name="${name:0:name_len-1}~"
 		((${#game} > game_len)) && game="${game:0:game_len-1}~"
 		((${#title} > title_len)) && title="${title:0:title_len-1}~"
 
-		# game=$(echo "$game" | iconv -f UTF-8 -t ASCII//TRANSLIT)
-		# title=$(echo "$title" | iconv -f UTF-8 -t ASCII//TRANSLIT)
+        # Transform unicode in ascii
+		game=$(echo "$game" | iconv -f UTF-8 -t ASCII//TRANSLIT)
+		title=$(echo "$title" | iconv -f UTF-8 -t ASCII//TRANSLIT)
 
 		# Print left aligned
-		printf "%-${name_len}s %-${game_len}s %-${viewers_len}s %-${title_len}s\n" \
+		printf "%-${name_len}s %-${game_len}s   %-${viewers_len}s %-${title_len}s\n" \
 			"$name" "$game" "$viewers" "$title"
 
 		# Parse json
@@ -75,8 +78,9 @@ play_stream() {
             cut -d " " -f1)
     fi
     if [ "$stream" ]; then
-        streamlink --twitch-disable-ads --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
-        chatterino -c "$stream" 2>/dev/null &
+        streamlink --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+        firefox --new-window twitch.tv/"$stream"/chat
+        # chatterino -c "$stream" 2>/dev/null &
         printf "Starting '%s' stream.\n" "$stream"
     fi
 }

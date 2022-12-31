@@ -1,11 +1,11 @@
 #!/bin/bash
 
-# Dependencies -|-|-|-
-# - fzf
+# Dependencies -|-|-|- - fzf
 # - json parser with jq syntax
 
 # Optional
-# - ripgrep
+# - Search: ripgrep
+# - Graph: graphviz
 
 # -----------
 
@@ -56,6 +56,9 @@ parse_command_line() {
 			fi
 			execute_menu
 			;;
+        -g | --graph)
+            debugging_graph
+            ;;
 		-l | --list)
 			list_menus
 			;;
@@ -107,6 +110,7 @@ Options:
     -l, --list          List the menu json files.
     -p, --parse         Only parse and show the menu file.
     -s, --search        Grep search all menu files and content they point to.
+    -g, --graph         Draw a graph of the menus json files for a visual help.
     --recursive         Process a submenu inside a menu. Internal use.
     --recursiveparse    The 'recursive' and 'parse' options together. Internal use.
 "
@@ -332,6 +336,37 @@ grep_search() {
 	file_list=$(echo -e "$file_list" | sort -u)
 	rg --column --line-number --color=always --smart-case --context 1 "$1" $file_list
 	exit 0
+}
+
+debugging_graph() {
+	graph_string_ini="digraph G { concentrate=true; ranksep=2; nodesep=1 "
+	graph_string_mid=""
+
+	files=$(ls $menus_path)
+	files=${files/root.json/}
+	files=${files/all.json/root.json}
+
+	for file in $files; do
+		menu_json=$(cat "$menus_path/$file")
+
+		while read -r menu_len; do
+			read -r direction
+			read -r level
+			# read -r json
+
+			file=$(echo "$file" | cut -d '.' -f1)
+			graph_string_mid+="$file [shape=box]; \n"
+			if [ "$direction" != "" ] && [ "$direction" != "all" ]; then
+				# graph_string_mid+="$file -> $direction [label=$level]; \n"
+				graph_string_mid+="$file -> $direction ; \n"
+			fi
+		done < <($parser -rc \
+			'(.menu | length , (.[] | .direction, .level, .))' \
+			<<<"$menu_json")
+
+	done
+	graph_string+="$graph_string_ini$graph_string_mid }"
+	echo -e "$graph_string" | dot -T png > menu_graph.png
 }
 
 parse_command_line "$@"

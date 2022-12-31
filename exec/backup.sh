@@ -2,50 +2,64 @@
 
 # Default compression alg => lz4
 
-BACKUP_PATH="$HOME/usb/anderson/SONY/backup/borg"
+BACKUP_PATH="$HOME/usb/anderson/SONY/backup_borg"
 
 backup_now() {
-    borg create --progress $BACKUP_PATH::backup-{now:%d-%m-%Y} \
-        $HOME/files \
-        $HOME/pictures \
-        $HOME/music \
-        $HOME/etc \
-        $HOME/compile_flags.txt  \
-        --exclude '*/node_modules/'
-        
+	borg create --progress "$BACKUP_PATH"::backup-{now:%d-%m-%Y} \
+		"$HOME"/files \
+		"$HOME"/pictures \
+		"$HOME"/videos \
+		"$HOME"/music \
+		"$HOME"/etc \
+		"$HOME"/compile_flags.txt \
+		--exclude '*/node_modules/' \
+		--exclude '/home/anderson/videos/usp'
+}
+
+backup_init() {
+	echo "borg init --encryption repokey *path*"
 }
 
 backup_list() {
-    borg list $BACKUP_PATH
+	borg list "$BACKUP_PATH"
 }
 
 backup_check() {
-    borg check $BACKUP_PATH
+	borg check "$BACKUP_PATH"
 }
 
 backup_info() {
-    borg info $BACKUP_PATH
+	borg info "$BACKUP_PATH"
 }
 
 print_help() {
-printf "\
-Backup script
+	printf "\
+User data backup script
 Options:
     -n, --now       Create a new backup with the current time
-    -l, --list     List the backups
+    -l, --list      List the backups
     -c, --check     Check the backup consistency
-    -h, --help      Show this help\n"
+    -h, --help      Show this help
+
+To init a borg repository:
+"
+	backup_init
 }
 
 case "$1" in
-    -n|--now)
-        backup_now ;;
-    -l|--list)
-        backup_list ;;
-    -c|--check)
-        backup_check ;;
-    -i|--info)
-        backup_info ;;
-    -h|--help|*)
-        print_help ;;
+-n | --now)
+	backup_now
+	;;
+-l | --list)
+	backup_list
+	;;
+-c | --check)
+	backup_check
+	;;
+-i | --info)
+	backup_info
+	;;
+-h | --help | *)
+	print_help
+	;;
 esac

@@ -1,7 +1,5 @@
 #!/bin/bash
 
-# This scrip runs after i3 starts
-
 # F4:73:35:5D:08:5E
 # 5A:83:A2:99:2F:51
 
