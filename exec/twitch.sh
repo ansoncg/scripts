@@ -16,7 +16,7 @@ name_len=20
 game_len=25
 viewers_len=7
 right_pad=10
-title_len=$((cols - name_len - game_len - viewers_len - right_pad + 3))
+title_len=$((cols - name_len - game_len - viewers_len - right_pad))
 
 print_following_data() {
 	# My channel request (Bucaco id=52363379)
@@ -32,15 +32,15 @@ print_following_data() {
 		read -r title
 		read -r viewers
 
-        # Remove non ascii from title
-        # title=$(echo "$title" | LC_ALL=C sed 's/[\d128-\d255]//g')
+		# Remove non ascii from title
+		# title=$(echo "$title" | LC_ALL=C sed 's/[\d128-\d255]//g')
 
 		# Truncate strings
 		((${#name} > name_len)) && name="${name:0:name_len-1}~"
 		((${#game} > game_len)) && game="${game:0:game_len-1}~"
 		((${#title} > title_len)) && title="${title:0:title_len-1}~"
 
-        # Transform unicode in ascii
+		# Transform unicode in ascii
 		game=$(echo "$game" | iconv -f UTF-8 -t ASCII//TRANSLIT)
 		title=$(echo "$title" | iconv -f UTF-8 -t ASCII//TRANSLIT)
 
@@ -64,25 +64,25 @@ print_moon_title() {
 }
 
 play_stream() {
-    stream=$1
-    quality=$2
+	stream=$1
+	quality=$2
 	if [ -z "$quality" ]; then
 		quality="best"
 	fi
-    if [ -z "$stream" ]; then
-        stream=$(print_following_data | fzf \
-            --border=sharp \
-            --header="Twitch launcher" \
-            --header-first \
-            --cycle --info=inline |
-            cut -d " " -f1)
-    fi
-    if [ "$stream" ]; then
-        streamlink --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
-        firefox --new-window twitch.tv/"$stream"/chat
-        # chatterino -c "$stream" 2>/dev/null &
-        printf "Starting '%s' stream.\n" "$stream"
-    fi
+	if [ -z "$stream" ]; then
+		stream=$(print_following_data | fzf \
+			--border=sharp \
+			--header="Twitch launcher" \
+			--header-first \
+			--cycle --info=inline |
+			cut -d " " -f1)
+	fi
+	if [ "$stream" ]; then
+		streamlink --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+		# firefox --new-window twitch.tv/"$stream"/chat
+		chatterino -c "$stream" 2>/dev/null &
+		printf "Starting '%s' stream.\n" "$stream"
+	fi
 }
 
 case "$1" in
@@ -90,7 +90,7 @@ case "$1" in
 	print_following_data
 	print_moon_title
 	;;
-*) 
-    play_stream "$@"
-    ;;
+*)
+	play_stream "$@"
+	;;
 esac

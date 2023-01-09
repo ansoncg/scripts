@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Dependencies -|-|-|- - fzf
+# Dependencies -|-|-|-
+# - fzf
 # - json parser with jq syntax
 
 # Optional
@@ -12,6 +13,7 @@
 # CONFIG -|-|-|-
 parser=jaq
 bin_path=$SCRIPTS_PATH
+data_path="/home/anderson/etc/my_apps_data/"
 menus_path="/home/anderson/etc/my_apps_data/control_menu"
 
 # Or a config file
@@ -56,9 +58,9 @@ parse_command_line() {
 			fi
 			execute_menu
 			;;
-        -g | --graph)
-            debugging_graph
-            ;;
+		-g | --graph)
+			debugging_graph
+			;;
 		-l | --list)
 			list_menus
 			;;
@@ -339,12 +341,13 @@ grep_search() {
 }
 
 debugging_graph() {
-	graph_string_ini="digraph G { concentrate=true; ranksep=2; nodesep=1 "
+	graph_string_ini="digraph G { rankdir=LR; center=true; concentrate=true; ranksep=2; nodesep=1 "
 	graph_string_mid=""
 
 	files=$(ls $menus_path)
 	files=${files/root.json/}
-	files=${files/all.json/root.json}
+	files=${files/template.json/}
+	files=${files/all.json/root.json} # GAMBI (TODO)
 
 	for file in $files; do
 		menu_json=$(cat "$menus_path/$file")
@@ -352,11 +355,10 @@ debugging_graph() {
 		while read -r menu_len; do
 			read -r direction
 			read -r level
-			# read -r json
 
 			file=$(echo "$file" | cut -d '.' -f1)
 			graph_string_mid+="$file [shape=box]; \n"
-			if [ "$direction" != "" ] && [ "$direction" != "all" ]; then
+			if [ "$direction" != "" ]; then
 				# graph_string_mid+="$file -> $direction [label=$level]; \n"
 				graph_string_mid+="$file -> $direction ; \n"
 			fi
@@ -366,7 +368,7 @@ debugging_graph() {
 
 	done
 	graph_string+="$graph_string_ini$graph_string_mid }"
-	echo -e "$graph_string" | dot -T png > menu_graph.png
+	echo -e "$graph_string" | dot -T png >"$data_path"/menu_graph.png
 }
 
 parse_command_line "$@"

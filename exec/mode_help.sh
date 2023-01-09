@@ -36,7 +36,11 @@ Start - Enter
 Stop - s
 Repeat - r
 Seek - l/h
+Radio - Shift+r
 Lofi - Shitf+l
+Info - Shitf+i
+Cover - Shift+c
+Lyrics - Shitf+y
 "
 }
 

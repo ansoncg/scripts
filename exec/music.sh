@@ -1,22 +1,182 @@
 #!/bin/bash
 
-# song=$(mpc list title | fzf)
-song=$(mpc listall | \
-    fzf \
-    --border=sharp \
-    --header="Music launcher" \
-    --header-first \
-    --cycle --info=inline \
-    --margin=0,0,0,0 \
-    --padding=0,0,0,1 \
-    --height=50%  \
-    --multi 
-)
+# Dependencies:
+# - mpd
+# - mpc
+# - fzf
+#
+# Optional:
+# - Cover picture: jaq, swayimg, playerctl, mpDris2
+# - Info: playerctl, mpDris2
+# - Lyrics: sptlrx (for now, TODO)
 
-if [ "$song" != "" ]; then
-    mpc insert "$song"
-    mpc next
-    mpc play
-    # mpc searchplay "$song"
-fi
-# mpc search title "$song" | mpc add
+# 89radio
+# https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_89FM_ADP.aac?dist=site-89fm
+# mpc insert "https://21933.live.streamtheworld.com/RADIO_89FM_ADP.aac?dist=site-89fm"
+
+parse_command_line() {
+	case $# in
+	"0")
+		search_play
+		;;
+	"1")
+		case "$1" in
+		-s | --search)
+			search_play
+			;;
+		-c | --cover)
+			show_cover
+			;;
+		-i | --info)
+			show_info
+			;;
+		-y | --lyrics)
+			toggle_lyrics
+			;;
+		-h | --help)
+			print_help
+			;;
+		esac
+		;;
+	"3")
+		case "$1" in
+		-p | --playlist)
+			play_playlist "$2" "$3"
+			;;
+		-e | --external)
+			insert_external "$2" "$3"
+			;;
+		esac
+		;;
+	esac
+}
+
+error() {
+	# TODO
+	true
+}
+
+print_help() {
+	printf "\
+Music handler
+Options:
+    -h, --help      Show this help.
+    -s, --search    Search and play a song.
+    -c, --cover     Display cover image if available.
+    -i, --info      Show current information about songs.
+    -p, --playlist  Choose and play a playlist.
+    -y, --lyrics    Show on stdout the current verse off the song, can be toggled while running.
+    -e, --external  Insert a external source with yt-dlp into the queue. By registered name or link.
+
+Info:
+    * '--external' is required for youtube videos because the manifest changes.
+    * An external source can be registered inside the script so it can be called by name with '--external'.
+    * Radio links that don't change can be made into MPD playlists.
+    * '--lyrics' is to be used on a status bar.
+"
+}
+
+# Search eveything by title song tag
+search_play() {
+	song=$(
+		mpc list title | fzf \
+			--border=sharp \
+			--header="Music launcher" \
+			--header-first \
+			--cycle \
+			--info=inline \
+			--margin=0,0,0,0 \
+			--padding=0,0,0,1 \
+			--height=50% \
+			--multi
+	)
+	if [ "$song" != "" ]; then
+		mpc clear
+		mpc insert /
+		mpc searchplay "$song"
+	fi
+}
+
+play_playlist() {
+	mpc clear
+	mpc load "$1"
+	mpc play
+	notify-send -t 2000 "MPD" "Playing $2"
+}
+
+control_playlists() {
+	# TODO
+	true
+}
+
+insert_external() {
+	declare -A EXT_SRCS
+	EXT_SRCS["lofi"]="https://www.youtube.com/watch?v=jfKfPfyJRdk"
+
+	if [ -z "${EXT_SRCS[$1]}" ]; then
+		src=$1
+	else
+		src=${EXT_SRCS[$1]}
+	fi
+	manifest=$(yt-dlp -g "$src")
+	mpc insert "$manifest"
+	notify-send -t 2000 "MPD" "External '$2' queued"
+}
+
+show_cover() {
+	screen_width=$(swaymsg -t get_outputs | jaq -rc '.[0] | .rect | .width')
+	image_size=300
+	pos_x=$((screen_width - 320))
+	pos_y=20
+	(swayimg --geometry=$pos_x,$pos_y,$image_size,$image_size \
+		"$(playerctl --player=mpd metadata mpris:artUrl | cut -d '/' -f3-)") >/dev/null 2>&1 ||
+		notify-send -t 1500 "Music error" "No album cover set"
+}
+
+show_info() {
+	playerctl --player=mpd metadata --format \
+		'Title:
+{{title}}
+
+Artist:
+{{artist}}
+
+Album:
+{{album}}
+'
+	echo \
+		"Up next:
+$(mpc queued)"
+}
+
+# Send (SIG)USR1 to change state
+toggle_lyrics() {
+	state=on
+	first_exec=1
+	infinite_loop_lyrics
+}
+
+infinite_loop_lyrics() {
+	trap 'kill "${child}"' SIGUSR1
+	case $state in
+	"off")
+		[ "$first_exec" == 1 ] || notify-send -t 1500 "Music" "Lyrics on"
+		state=on
+		sptlrx pipe &
+		child="$!"
+		wait "${child}"
+		;;
+	"on")
+		[ "$first_exec" == 1 ] || notify-send -t 1500 "Music" "Lyrics off"
+		state=off
+		echo ""
+		sleep infinity &
+		child="$!"
+		wait "${child}"
+		;;
+	esac
+	first_exec=0
+	infinite_loop_lyrics
+}
+
+parse_command_line "$@"

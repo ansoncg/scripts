@@ -11,4 +11,4 @@ while [ -z "$info" ]; do
 done
 
 notify-send "k380 connected"
-$SCRIPTS_PATH/peripherals_config.sh -kb k380
+solaar config k380 Fn-swap false > /dev/null 2>&1 &
