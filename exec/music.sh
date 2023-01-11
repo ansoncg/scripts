@@ -152,30 +152,47 @@ $(mpc queued)"
 # Send (SIG)USR1 to change state
 toggle_lyrics() {
 	state=on
-	first_exec=1
+	notification=off
 	infinite_loop_lyrics
 }
 
+toggle_stateon() {
+	state=on
+}
+
+toggle_stateoff() {
+	state=off
+}
+
+notification_on() {
+	notification=on
+}
+
+notification_off() {
+	notification=off
+}
+
 infinite_loop_lyrics() {
-	trap 'kill "${child}"' SIGUSR1
+	trap 'kill "${child}" ; notification_on' SIGUSR1
+	trap 'kill "${child}" ; notification_off ; toggle_stateon' SIGUSR2
+	trap 'kill ${child} ; exit' SIGTERM
 	case $state in
 	"off")
-		[ "$first_exec" == 1 ] || notify-send -t 1500 "Music" "Lyrics on"
-		state=on
+		[ "$notification" == off ] || notify-send -t 1500 "Music" "Lyrics on"
+		toggle_stateon
 		sptlrx pipe &
 		child="$!"
 		wait "${child}"
 		;;
 	"on")
-		[ "$first_exec" == 1 ] || notify-send -t 1500 "Music" "Lyrics off"
-		state=off
+		[ "$notification" == off ] || notify-send -t 1500 "Music" "Lyrics off"
+		toggle_stateoff
 		echo ""
 		sleep infinity &
 		child="$!"
 		wait "${child}"
 		;;
 	esac
-	first_exec=0
 	infinite_loop_lyrics
 }
 
