@@ -12,7 +12,7 @@ parse_command_line() {
 	case $1 in
 	-c | --create)
 		create_directories
-		create_thumbnails
+		create_all
 		;;
 	-o | --open)
 		open_video_thumbnails
@@ -20,13 +20,31 @@ parse_command_line() {
 	-r | --run)
 		run_video_from_thumbnail "$2"
 		;;
+	-n | --notify)
+		video_inotify
+		;;
+    -h | --help)
+        print_help
+        ;;
 	esac
+}
+
+print_help() {
+	printf "\
+Handle video thumbnails
+Options:
+    -c, --create    Create thumbnails for all the current videos.
+    -o, --open      Open all thumbnails on 'vimiv' to use it as video picker.
+    -r, --run       Run the video from a thumbnail file.
+    -n, --notify    Watch the video directory for changes to manage the thumbnails.
+    -h, --help      Show this help.
+"
 }
 
 open_video_thumbnails() {
 	find "$thumbnails_path" -type f -printf "\"%p\"\n" | xargs vimiv --command "enter thumbnail" \
 		--command "set statusbar.show True" \
-        --command 'bind v "!/home/anderson/files/scripts/exec/thumbnail_handler.sh --run \%"'
+		--command 'bind v "!/home/anderson/files/scripts/exec/thumbnail_handler.sh --run \%"'
 }
 
 run_video_from_thumbnail() {
@@ -41,17 +59,80 @@ create_directories() {
 	done < <(find . -type d)
 }
 
-create_thumbnails() {
+check_extension() {
+	file=$1
+	ext="${file##*.}"
+	case "$ext" in
+	"mp4" | "webm" | "mkv")
+		echo true
+		;;
+	*)
+		echo false
+		;;
+	esac
+}
+
+create_thumbnail() {
+	file=$1
+	ffmpegthumbnailer -i "$videos_path/$file" -o "$thumbnails_path"/"$file".png -s 512
+}
+
+create_all() {
 	cd $videos_path || exit
 	while read -r entry; do
-		ext="${entry##*.}"
-		case "$ext" in
-		"mp4" | "webm" | "mkv")
-			echo "$entry"
-			ffmpegthumbnailer -i "$entry" -o "$thumbnails_path"/"$entry".png -s 512
-			;;
-		esac
+		check=$(check_extension "$entry")
+		if [ "$check" == true ]; then
+			create_thumbnail "$entry"
+		fi
 	done < <(find .)
+}
+
+video_inotify() {
+    tmp_path=""
+	inotifywait \
+		-e create \
+		-e delete \
+		-e move \
+		--format "%w%f,%e%0" \
+		--no-newline \
+		--timefmt "%c" \
+		--exclude \
+		"videos/thumbnails" \
+		-Prm \
+		~/videos |
+		while IFS= read -r -d '' message; do
+			file_path=$(echo "$message" | cut -d ',' -f1)
+			event=$(echo "$message" | cut -d ',' -f2)
+
+			if [ "$(check_extension "$file_path")" == false ]; then
+				continue
+			fi
+
+			case $event in
+			"CREATE")
+				create_thumbnail "$(echo "$file_path" | awk -F $videos_path '{print $2}')"
+				;;
+			"DELETE")
+				rm $thumbnails_path"$(echo "$file_path" | awk -F "$videos_path" '{print $2}').png"
+				;;
+			"MOVED_FROM")
+				mkdir -p /tmp/v_move_thumbnails
+				origin_path=$thumbnails_path"$(echo "$file_path" | awk -F "$videos_path" '{print $2}').png"
+				tmp_path="/tmp/v_move_thumbnails"/"$(basename -- "$file_path").png"
+				mv "$origin_path" "/tmp/v_move_thumbnails/"
+				;;
+			"MOVED_TO")
+                if [ -z "$tmp_path" ]; then
+                    create_thumbnail "$(echo "$file_path" | awk -F $videos_path '{print $2}')"
+                else
+                    dst_path=$thumbnails_path"$(echo "$file_path" | awk -F "$videos_path" '{print $2}').png"
+                    mv "$tmp_path" "$dst_path"
+                    tmp_path=""
+                fi
+				;;
+			esac
+
+		done &
 }
 
 parse_command_line "$@"

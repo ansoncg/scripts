@@ -2,7 +2,10 @@
 
 killall inotifywait
 
-# Recursive
+# Video thumbnails
+"$SCRIPTS_PATH"/thumbnail_handler.sh --notify
+
+# Recursive. ~/.config
 inotifywait \
 	-e close_write \
 	-e create \
@@ -17,7 +20,7 @@ inotifywait \
 	"fish_history|ranger/bookmarks|ranger/history|mpd" \
 	-o /home/anderson/etc/my_apps_data/state.log &
 
-# Non Recursive
+# Non Recursive. ~, ~/.local/share
 inotifywait \
 	-e close_write \
 	-e create \
@@ -30,10 +33,5 @@ inotifywait \
 	/home/anderson \
 	~/.local/share \
 	--exclude \
-	"bash_history" \
+	"bash_history|python_history" \
 	-o /home/anderson/etc/my_apps_data/state.log &
-
-# 	|
-# 	while IFS= read -r -d '' message; do
-# 		echo "$message"
-# 	done &
