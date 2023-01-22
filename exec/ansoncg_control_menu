@@ -10,11 +10,16 @@
 
 # -----------
 
+# Fish completion
+# complete -f -c ,c -a "$(ls ~/etc/my_apps_data/control_menu | cut -d . -f1)"
+
+# -----------
+
 # CONFIG -|-|-|-
 parser=jaq
-bin_path=$SCRIPTS_PATH
-data_path="/home/anderson/etc/my_apps_data/"
-menus_path="/home/anderson/etc/my_apps_data/control_menu"
+bin_path="$0"
+data_path="$HOME/.local/share/ansoncg/control_menu"
+menus_path="$HOME/.config/ansoncg/control_menu/menus"
 
 # Or a config file
 # config_path="/home/anderson/etc/my_apps_data/menu.conf"
@@ -188,6 +193,7 @@ json_parse_show() {
 			read -r label
 			read -r content
 
+            content=${content/\$HOME/$HOME}
 			if [ -f "$content" ]; then
 				info="$(basename "$content")"    # Only the file name. The content is a file.
 				run["$index"]="$EDITOR $content" # Set the command to run
@@ -270,9 +276,9 @@ pick_option() {
 			--tac \
 			--preview=" if [ {-2} == Menu ]; then
                             if [ -f \"$menus_path\"/{-1}.json ]; then
-                                \"$bin_path\"/control_parser.sh --parse {-1}
+                                \"$bin_path\" --parse {-1}
                             else
-                                \"$bin_path\"/control_parser.sh --recursiveparse {-1}
+                                \"$bin_path\" --recursiveparse {-1}
                             fi
                         elif [ -f {-1} ]; then
                             cat {-1}
@@ -296,9 +302,9 @@ execute_option() {
 			;;
 		"menu")
 			if [ "${is_redirected["$choice"]}" == true ]; then
-				exec "$bin_path"/control_parser.sh "${run["$choice"]}"
+				exec "$bin_path" "${run["$choice"]}"
 			else
-				exec "$bin_path"/control_parser.sh --recursive "${run["$choice"]}"
+				exec "$bin_path" --recursive "${run["$choice"]}"
 			fi
 			;;
 		*) ;;

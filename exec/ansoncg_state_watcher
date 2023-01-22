@@ -1,9 +1,10 @@
 #!/bin/bash
 
 killall inotifywait
+log_file="$HOME"/.local/share/ansoncg/state_watcher/state.log
 
 # Video thumbnails
-"$SCRIPTS_PATH"/thumbnail_handler.sh --notify
+ansoncg_thumbnail_handler --notify
 
 # Recursive. ~/.config
 inotifywait \
@@ -18,7 +19,7 @@ inotifywait \
 	~/.config \
 	--exclude \
 	"fish_history|ranger/bookmarks|ranger/history|mpd" \
-	-o /home/anderson/etc/my_apps_data/state.log &
+	-o "$log_file" &
 
 # Non Recursive. ~, ~/.local/share
 inotifywait \
@@ -33,5 +34,5 @@ inotifywait \
 	/home/anderson \
 	~/.local/share \
 	--exclude \
-	"bash_history|python_history" \
-	-o /home/anderson/etc/my_apps_data/state.log &
+	"bash_history|python_history|state.log" \
+	-o "$log_file" &

@@ -5,8 +5,8 @@
 # - bat
 # - gtk-launch
 
-cache_path=$HOME/etc/my_apps_data
-log_path="$HOME"/etc/my_apps_data/launcher.log
+cache_path=$HOME/.local/share/ansoncg/launcher/
+log_path="$HOME"/.local/share/ansoncg/launcher/launcher.log
 apps_path=/usr/share/applications
 
 update_cache() {

@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# Dependencies:
+# - jaq
+
+while read -r app_id ; read -r pid; do
+    notify-send -u critical -t 3000 "SIGKILL" "PID: $pid\nName: $app_id"
+    kill -9 "$pid"
+done < <(swaymsg -t get_tree | jaq 'recurse(.nodes[], .floating_nodes[]) | select(.focused) | .app_id, .pid')

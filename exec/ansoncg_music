@@ -10,6 +10,8 @@
 # - Info: playerctl, mpDris2
 # - Lyrics: sptlrx (for now, TODO)
 
+# waybar and sway config reference this script
+
 # 89radio
 # https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_89FM_ADP.aac?dist=site-89fm
 # mpc insert "https://21933.live.streamtheworld.com/RADIO_89FM_ADP.aac?dist=site-89fm"
@@ -33,7 +35,13 @@ parse_command_line() {
 		-y | --lyrics)
 			toggle_lyrics
 			;;
-		-h | --help)
+		-p | --playlist)
+			entry=$(mpc lsplaylists | fzf)
+			if [ -n "$entry" ]; then
+				play_playlist "$entry" "$entry"
+			fi
+			;;
+		-h | --help | *)
 			print_help
 			;;
 		esac
@@ -46,7 +54,13 @@ parse_command_line() {
 		-e | --external)
 			insert_external "$2" "$3"
 			;;
+		*)
+			print_help
+			;;
 		esac
+		;;
+	*)
+		print_help
 		;;
 	esac
 }

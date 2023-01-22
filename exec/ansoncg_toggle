@@ -42,30 +42,30 @@ command_line() {
 		case "$1" in
 		-h | --help)
 			print_help
-            exit
+			exit
 			;;
-        -s | --start)
+		-s | --start)
 			operation=start_toggle
-            menu_name="Start Toggle"
+			menu_name="Start Toggle"
 			;;
-        -x | --stop) 
+		-x | --stop)
 			operation=stop_toggle
-            menu_name="Stop Toggle"
-            ;;
-        -e | --explain)
+			menu_name="Stop Toggle"
+			;;
+		-e | --explain)
 			operation=explain_toggle
-            menu_name="Explain Toggle"
-            ;;
+			menu_name="Explain Toggle"
+			;;
 		*)
 			print_error operation "$1"
 			exit
 			;;
 		esac
-        entry=$(fuzzy_list "$menu_name")
-        if [ -z "$entry" ]; then 
-            exit 
-        fi
-        $operation "$entry"
+		entry=$(fuzzy_list "$menu_name")
+		if [ -z "$entry" ]; then
+			exit
+		fi
+		$operation "$entry"
 		;;
 	"2")
 		case "$1" in
@@ -98,19 +98,20 @@ command_line() {
 
 fuzzy_list() {
 	get_registered_toggles
-    toggles=$(echo "$toggles" | tr ' ' '\n')
-    entry=$(
-        fzf \
-        --border=sharp \
-        --header="$1" \
-        --header-first \
-        --cycle \
-        --info=inline \
-        --margin=0,0,0,0 \
-        --padding=0,0,0,1 \
-        --height=30%  \
-        <<< "$toggles")
-    echo "$entry"
+	toggles=$(echo "$toggles" | tr ' ' '\n')
+	entry=$(
+		fzf \
+			--border=sharp \
+			--header="$1" \
+			--header-first \
+			--cycle \
+			--info=inline \
+			--margin=0,0,0,0 \
+			--padding=0,0,0,1 \
+			--height=30% \
+			<<<"$toggles"
+	)
+	echo "$entry"
 }
 
 print_help() {
@@ -189,11 +190,11 @@ explain_toggle() {
 # Reverse tethering ---
 
 revtet_start() {
-    process_start gnirehtet
+	process_start gnirehtet
 }
 
 revtet_stop() {
-    process_stop gnirehtet
+	process_stop gnirehtet
 }
 
 revtet_explain() {

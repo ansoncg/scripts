@@ -5,4 +5,4 @@ if [ "$(swaymsg -t get_outputs | grep -c  name)" == "2" ] ; then
     swaymsg output HDMI-A-2 pos 0 0 res 1920x1080
 fi
 
-"$SCRIPTS_PATH"/kb_auto_connect.sh
+ansoncg_kb_auto_connect

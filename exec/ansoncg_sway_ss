@@ -6,24 +6,36 @@
 # - grim
 # - slurp
 # - swappy
+# - jq/jaq
 # - notifications
+# - tesseract
 
 full_screenshot() {
 	name=$(date '+screenshot@%F_%H-%M-%S').png
 	path=$HOME/pictures/screenshots/$name
-	grim -o "$(swaymsg -t get_outputs | jq -r '.[] | select(.focused) | .name')" "$path"
+	grim -o "$(swaymsg -t get_outputs | jaq -r '.[] | select(.focused) | .name')" "$path"
 	notify-send "Full screen captured" "$name"
 }
 
 region_screenshot() {
 	name=$(date '+screenshot@%F_%H-%M-%S').png
 	path=$HOME/pictures/screenshots/$name
-	out=$( (grim -g "$(slurp)" - | swappy -f - -o "$path") 2>&1)
+	out=$( (grim -g "$(slurp -d)" - | swappy -f - -o "$path") 2>&1)
 	if [ "$out" ]; then
 		notify-send "Region screen capture" "Capture was cancelled"
 	else
 		notify-send "Region screen captured" "$name"
 	fi
+}
+
+region_ocr() {
+    grim -l 0 -g "$(slurp)" - | tesseract -l eng stdin stdout | wl-copy
+    result=$(wl-paste -n)
+    if [ -z "$result" ]; then
+        notify-send -u critical -t 1500 "Region OCR" "Empty result"
+    else
+        notify-send "Region OCR" "$result"
+    fi
 }
 
 show_help() {
@@ -32,6 +44,7 @@ Screenshot handler for sway
 Options:
     -f, --full      Current display full screenshot 
     -r, --region    Region plus edit screenshot
+    -o, --ocr       Send a tesseract output from a region to clipboard
     -h, --help      Show this help
 "
 }
@@ -43,6 +56,9 @@ case "$1" in
 -r | --region)
 	region_screenshot
 	;;
+-o | --ocr)
+    region_ocr
+    ;;
 -h | --help)
 	show_help
 	;;

@@ -9,7 +9,8 @@
 
 auth=""
 id=""
-eval "$(cat "$HOME"/etc/my_apps_data/twitch.keys)"
+default_quality=""
+eval "$(cat "$HOME"/.local/share/ansoncg/twitch/twitch.conf)"
 
 cols=$(tput cols)
 name_len=20
@@ -67,7 +68,7 @@ play_stream() {
 	stream=$1
 	quality=$2
 	if [ -z "$quality" ]; then
-		quality="best"
+		quality="$default_quality"
 	fi
 	if [ -z "$stream" ]; then
 		stream=$(print_following_data | fzf \
@@ -78,7 +79,8 @@ play_stream() {
 			cut -d " " -f1)
 	fi
 	if [ "$stream" ]; then
-		streamlink --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+		# streamlink --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+		streamlink --twitch-disable-ads --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
 		# firefox --new-window twitch.tv/"$stream"/chat
 		chatterino -c "$stream" 2>/dev/null &
 		printf "Starting '%s' stream.\n" "$stream"

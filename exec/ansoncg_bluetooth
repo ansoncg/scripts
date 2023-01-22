@@ -19,23 +19,8 @@ associations[jbl]=laptop
 associations[tws1]=laptop
 associations[tws2]=orico
 
-list_connected() {
-	# Get controllers to loop
-	declare controllers
-	controllers=$(printf "list" | bluetoothctl | grep "Controller" | cut -d ' ' -f 2)
-
-	for controller in $controllers; do
-		devices_connected=$(printf "select %s \n devices Connected" "$controller" | bluetoothctl | grep Device | cut -d ' ' -f 2)
-		printf "Controller: %s \n" "$controller"
-		for device in $devices_connected; do
-			device_info=$(printf "select %s \n info %s" "$controller" "$device" | bluetoothctl)
-			if echo "$device_info" | grep -q "Connected: yes"; then
-				device_alias=$(echo "$device_info" | grep "Alias" | cut -d ' ' -f 2-)
-				printf "Device: %s\n" "$device_alias"
-			fi
-		done
-		printf "\n"
-	done
+restart_bluetooth() {
+	systemctl restart bluetooth.service
 }
 
 get_registered_devices() {
@@ -53,10 +38,77 @@ command_device() {
 	fi
 }
 
+action_select() {
+    action=$(printf "\
+Connect
+Disconnect
+Remove
+Info
+Trust
+Scan devices on
+Scan devices off" | fzf)
+}
+
 reconnect_device() {
 	command_device disconnect "$1"
 	sleep 10
 	command_device connect "$1"
+}
+
+# All controllers functions ---
+
+bluetooth_menu() {
+	controller_choice=$(controller_select)
+	device_choice=$(controller_devices_select "$controller_choice")
+	if [ -z "$device_choice" ]; then
+		device_choice="None"
+	fi
+	echo "$controller_choice $device_choice"
+}
+
+all_controllers() {
+	bluetoothctl -- list | grep "Controller" | cut -d ' ' -f 2
+}
+
+all_devices() {
+	bluetoothctl -- devices | cut -d ' ' -f2-
+}
+
+all_devices_connected() {
+	declare controllers
+
+	controllers=$(all_controllers)
+	for controller in $controllers; do
+		devices_connected=$(controller_devices_connected "$controller")
+		printf "Controller: %s \n%s\n" "$controller" "$devices_connected"
+	done
+}
+
+# Per controller functions ---
+
+controller_devices() {
+	printf "select %s \n devices" "$1" | bluetoothctl | grep Device | cut -d ' ' -f2-
+}
+
+controller_devices_connected() {
+	printf "select %s \n devices Connected" "$1" | bluetoothctl | grep Device | cut -d ' ' -f2-
+}
+
+controller_select() {
+	all_controllers | fzf
+}
+
+controller_devices_select() {
+	entry=$(controller_devices "$1" | fzf)
+	echo "$entry" | cut -d ' ' -f1
+}
+
+# Per controller+device combo functions ---
+
+combo_send_command() {
+	if [ -n "$controller_choice" ] && [ -n "$device_choice" ]; then
+		printf "select %s\n%s %s\n" "$controller_choice" "$1" "$device_choice" | bluetoothctl
+	fi
 }
 
 print_help() {
@@ -76,6 +128,11 @@ if [ "$(systemctl is-active "bluetooth.service")" = "inactive" ]; then
 	printf "Bluetooth is off\n"
 else
 	case "$1" in
+	-t)
+        action_select
+		# bluetooth_menu
+		# combo_send_command "$2"
+		;;
 	-c | --connect)
 		command_device connect "$2"
 		;;
@@ -85,11 +142,14 @@ else
 	-r | --reconnect)
 		reconnect_device "$2"
 		;;
+	-x | --restart)
+		restart_bluetooth
+		;;
 	-i | --info)
 		command_device info "$2"
 		;;
 	-l | --list)
-		list_connected
+		all_devices_connected
 		;;
 	-h | --help | *)
 		print_help

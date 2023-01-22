@@ -23,9 +23,9 @@ parse_command_line() {
 	-n | --notify)
 		video_inotify
 		;;
-    -h | --help)
-        print_help
-        ;;
+	-h | --help)
+		print_help
+		;;
 	esac
 }
 
@@ -88,7 +88,7 @@ create_all() {
 }
 
 video_inotify() {
-    tmp_path=""
+	tmp_path=""
 	inotifywait \
 		-e create \
 		-e delete \
@@ -122,13 +122,13 @@ video_inotify() {
 				mv "$origin_path" "/tmp/v_move_thumbnails/"
 				;;
 			"MOVED_TO")
-                if [ -z "$tmp_path" ]; then
-                    create_thumbnail "$(echo "$file_path" | awk -F $videos_path '{print $2}')"
-                else
-                    dst_path=$thumbnails_path"$(echo "$file_path" | awk -F "$videos_path" '{print $2}').png"
-                    mv "$tmp_path" "$dst_path"
-                    tmp_path=""
-                fi
+				if [ -z "$tmp_path" ]; then
+					create_thumbnail "$(echo "$file_path" | awk -F $videos_path '{print $2}')"
+				else
+					dst_path=$thumbnails_path"$(echo "$file_path" | awk -F "$videos_path" '{print $2}').png"
+					mv "$tmp_path" "$dst_path"
+					tmp_path=""
+				fi
 				;;
 			esac
 

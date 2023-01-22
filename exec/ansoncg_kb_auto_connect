@@ -10,5 +10,5 @@ while [ -z "$info" ]; do
     info=$(printf "select 00:1A:7D:DA:71:13\ninfo F4:73:35:5D:08:5E\n" | bluetoothctl | grep "Connected: yes") 
 done
 
-notify-send "k380 connected"
+notify-send "Bluetooth" "Keyboard connected"
 solaar config k380 Fn-swap false > /dev/null 2>&1 &
