@@ -31,7 +31,7 @@ case "$1" in
 "Firefox")
 	play_sound "dino_mail.ogg"
 	;;
-"telegramdesktop")
+"Telegram Desktop")
 	play_sound "msn.ogg"
 	;;
 *)

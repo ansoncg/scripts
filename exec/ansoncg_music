@@ -144,7 +144,7 @@ show_cover() {
 	pos_y=20
 	(swayimg --geometry=$pos_x,$pos_y,$image_size,$image_size \
 		"$(playerctl --player=mpd metadata mpris:artUrl | cut -d '/' -f3-)") >/dev/null 2>&1 ||
-		notify-send -t 1500 "Music error" "No album cover set"
+		notify-send -u critical -t 1500 "Music error" "No album cover set"
 }
 
 show_info() {

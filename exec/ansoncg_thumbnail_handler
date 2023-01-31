@@ -44,7 +44,7 @@ Options:
 open_video_thumbnails() {
 	find "$thumbnails_path" -type f -printf "\"%p\"\n" | xargs vimiv --command "enter thumbnail" \
 		--command "set statusbar.show True" \
-		--command 'bind v "!/home/anderson/files/scripts/exec/thumbnail_handler.sh --run \%"'
+		--command 'bind v "!ansoncg_thumbnail_handler --run \%"'
 }
 
 run_video_from_thumbnail() {
