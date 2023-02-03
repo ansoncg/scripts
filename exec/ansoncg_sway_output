@@ -1,0 +1,168 @@
+#!/bin/bash
+
+# Dependencies
+# fzf
+# jq/jaq
+
+# man 5 sway-output
+
+alias_path="$HOME/.config/ansoncg/sway_output/alias.json"
+
+get_alias_from_output() {
+	jaq -rc ".[] | select(.output==\"$1\") | .alias" <"$alias_path"
+}
+
+get_output_from_alias() {
+	jaq -rc ".[] | select(.alias==\"$1\") | .output" <"$alias_path"
+}
+
+list_alias() {
+	jaq -rc '.[].alias' <"$alias_path"
+}
+
+list_outputs() {
+	swaymsg -t get_outputs | jaq -r '.[].name'
+}
+
+list_operations() {
+	printf "\
+Scale
+Toggle"
+}
+
+list_scale_factor() {
+	printf "\
+1
+1.3
+1.5
+1.7
+2"
+}
+
+list_outputs_with_alias() {
+	while read -r output; do
+		alias=$(get_alias_from_output "$output")
+		printf "%-10s | %-10s\n" "$output" "$alias"
+	done < <(list_outputs)
+}
+
+pick_output() {
+	choice_output=$(fuzzy_picker "$(list_outputs_with_alias)" "Output" | cut -d '|' -f1)
+}
+
+pick_operation() {
+	choice_operation=$(fuzzy_picker "$(list_operations)" "Operations")
+}
+
+pick_scale_factor() {
+	choice_scale_factor=$(fuzzy_picker "$(list_scale_factor)" "Scale factor")
+}
+
+operation_scale() {
+	swaymsg output "$choice_output" scale "$choice_scale_factor"
+}
+
+operation_toggle() {
+	swaymsg output "$choice_output" toggle
+}
+
+fuzzy_picker() {
+	echo "$1" | fzf \
+		--border=sharp \
+		--cycle \
+		--header="$2" \
+		--header-first \
+		--info=inline \
+		--margin=0,0,0,0 \
+		--padding=0,0,0,1 \
+		--height=50%
+}
+
+run_operation() {
+	case "$choice_operation" in
+	Scale)
+		pick_output
+		pick_scale_factor
+		operation_scale
+		;;
+	Toggle)
+		pick_output
+		operation_toggle
+		;;
+	esac
+}
+
+print_help() {
+	printf "\
+> Sway output control <
+Options:
+    -h, --help                       Show this help.
+    -l, --list                       List connected outputs.
+    -s, --scale <alias> <scale>      Scale an output.
+    -t, --toggle <alias>             Toggle and output.
+
+Info:
+    Operations and options have a fuzzy selector if not specified.
+"
+}
+
+parse_command() {
+	case $# in
+	"0") # No flags
+		pick_operation
+		run_operation
+		;;
+	"1") # With operation flag
+		case "$1" in
+		-s | --scale)
+			choice_operation="Scale"
+			run_operation
+			;;
+		-t | --toggle)
+			choice_operation="Toggle"
+			run_operation
+			;;
+		-l | --list)
+			list_outputs_with_alias
+			;;
+		-h | --help | *)
+			print_help
+			;;
+		esac
+		;;
+	"2") # With operation flag + output information
+		case "$1" in
+		-s | --scale)
+			choice_output=$(get_output_from_alias "$2")
+            pick_scale_factor
+            operation_scale
+			;;
+		-t | --toggle)
+			choice_operation="Toggle"
+			choice_output=$(get_output_from_alias "$2")
+            operation_toggle
+			;;
+		*)
+			print_help
+			;;
+		esac
+		;;
+	"3") # With operation flag + output information + additional information
+		case "$1" in
+		-s | --scale)
+			choice_output=$(get_output_from_alias "$2")
+            choice_scale_factor="$3"
+            operation_scale
+			;;
+		*)
+			print_help
+			;;
+		esac
+		;;
+	*)
+		print_help
+		;;
+	esac
+}
+
+parse_command "$@"

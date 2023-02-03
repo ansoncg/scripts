@@ -51,29 +51,11 @@ controller_devices_connected() {
 }
 
 controller_select() {
-	all_controllers | fzf \
-		--border=sharp \
-		--cycle \
-		--header="Bluetooth - Select controller" \
-		--header-first \
-		--info=inline \
-		--margin=0,0,0,0 \
-		--padding=0,0,0,1 \
-		--height=50%
+    fuzzy_picker "$(all_controllers)" "Bluetooth - Select controller"
 }
 
 controller_devices_select() {
-	entry=$(
-		controller_devices "$1" | fzf \
-			--border=sharp \
-			--cycle \
-			--header="Bluetooth - Select device" \
-			--header-first \
-			--info=inline \
-			--margin=0,0,0,0 \
-			--padding=0,0,0,1 \
-			--height=50%
-	)
+    entry=$(fuzzy_picker "$(controller_devices "$1")" "Bluetooth - Select device new")
 	echo "$entry" | cut -d ' ' -f1
 }
 
@@ -140,25 +122,14 @@ script_reconnect_label() {
 }
 
 script_action_select() {
-	action=$(
-		printf "\
+	action=$(fuzzy_picker "\
 Connect
 Disconnect
 Info
 List
 Remove
 Scan
-Trust" |
-			fzf \
-				--border=sharp \
-				--cycle \
-				--header="Bluetooth - Select action" \
-				--header-first \
-				--info=inline \
-				--margin=0,0,0,0 \
-				--padding=0,0,0,1 \
-				--height=50%
-	)
+Trust" "Bluetooth - Select action")
 
 	case "$action" in
 	Connect | Disconnect | Remove | Info | Trust)
@@ -173,6 +144,18 @@ Trust" |
 		all_devices_connected
 		;;
 	esac
+}
+
+fuzzy_picker() {
+	echo "$1" | fzf \
+		--border=sharp \
+		--cycle \
+		--header="$2" \
+		--header-first \
+		--info=inline \
+		--margin=0,0,0,0 \
+		--padding=0,0,0,1 \
+		--height=50%
 }
 
 print_help() {
@@ -244,7 +227,13 @@ parse_command() {
 		-r | --reconnect)
 			script_reconnect_label "$2"
 			;;
+		*)
+			print_help
+			;;
 		esac
+		;;
+	*)
+		print_help
 		;;
 	esac
 }
