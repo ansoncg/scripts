@@ -16,6 +16,17 @@ get_output_from_alias() {
 	jaq -rc ".[] | select(.alias==\"$1\") | .output" <"$alias_path"
 }
 
+list_current_modes() {
+	while read -r current_width; do
+		read -r current_height
+		read -r current_refresh
+		read -r current_ratio
+		current_refresh=${current_refresh:0:-3}.${current_refresh: -3}Hz
+		printf "%sx%s@%s %s\n" "$current_width" "$current_height" "$current_refresh" "$current_ratio"
+
+	done < <(swaymsg -t get_outputs | jaq -rc '(.[].current_mode | .width, .height, .refresh, .picture_aspect_ratio)')
+}
+
 list_alias() {
 	jaq -rc '.[].alias' <"$alias_path"
 }
@@ -27,7 +38,8 @@ list_outputs() {
 list_operations() {
 	printf "\
 Scale
-Toggle"
+Toggle
+Mode"
 }
 
 list_scale_factor() {
@@ -46,8 +58,71 @@ list_outputs_with_alias() {
 	done < <(list_outputs)
 }
 
+list_outputs_info() {
+	echo "|------------|------------|-------|-----------------------|-------|"
+	printf "| %-10s | %-10s | %-5s | %-21s | %-5s |\n" "Name" "Alias" "Scale" "Mode" "Power"
+	echo "|------------|------------|-------|-----------------------|-------|"
+	while read -r output_name; do
+		read -r current_power
+		alias=$(get_alias_from_output "$output_name")
+
+		if [ "$current_power" == true ]; then
+			read -r current_scale
+			read -r current_width
+			read -r current_height
+			read -r current_refresh
+			current_power="On"
+			current_refresh=${current_refresh:0:-3}.${current_refresh: -3}Hz
+		else
+			current_scale=0
+			current_width=0
+			current_height=0
+			current_refresh=0
+			current_power="Off"
+		fi
+
+		printf "| %-10s | %-10s | %-5s | %4sx%-4s @ %-9s | %-5s |\n" \
+			"$output_name" "$alias" "$current_scale" "$current_width" "$current_height" "$current_refresh" "$current_power"
+
+	done < <(swaymsg -t get_outputs |
+		jaq -rc \
+			'(.[] |
+            (.name),
+            (.power),
+            (select(.power==true) |
+                (.scale),
+                (.current_mode | .width, .height, .refresh)))')
+
+	echo "|------------|------------|-------|-----------------------|-------|"
+}
+
+list_modes() {
+	while read -r current_width; do
+		read -r current_height
+		read -r current_refresh
+		read -r current_ratio
+		current_refresh=${current_refresh:0:-3}.${current_refresh: -3}Hz
+		printf ">>%sx%s@%s<< %s\n" "$current_width" "$current_height" "$current_refresh" "$current_ratio"
+
+		read -r modes_len
+		for _ in $(seq 1 "$modes_len"); do
+			read -r mode_width
+			read -r mode_height
+			read -r mode_refresh
+			read -r mode_ratio
+			mode_refresh=${mode_refresh:0:-3}.${mode_refresh: -3}Hz
+			printf "%sx%s@%s %s\n" "$mode_width" "$mode_height" "$mode_refresh" "$mode_ratio"
+		done
+	done < <(swaymsg -t get_outputs |
+		jaq -rc \
+			"(.[] 
+                | select(.name==\"$choice_output\") 
+                | (.current_mode | .width, .height, .refresh, .picture_aspect_ratio) ,
+                (.modes | length , (.[] | .width, .height, .refresh, .picture_aspect_ratio)))")
+}
+
 pick_output() {
-	choice_output=$(fuzzy_picker "$(list_outputs_with_alias)" "Output" | cut -d '|' -f1)
+	choice_output=$(fuzzy_picker "$(list_outputs_with_alias)" "Output" | awk '{print $1}')
 }
 
 pick_operation() {
@@ -58,12 +133,21 @@ pick_scale_factor() {
 	choice_scale_factor=$(fuzzy_picker "$(list_scale_factor)" "Scale factor")
 }
 
+pick_mode() {
+	# Removes the aspect ratio and duplicates for now
+	modes=$(list_modes | awk '{print $1}' | uniq)
+	choice_mode=$(fuzzy_picker "$modes" "Modes")
+}
 operation_scale() {
 	swaymsg output "$choice_output" scale "$choice_scale_factor"
 }
 
 operation_toggle() {
 	swaymsg output "$choice_output" toggle
+}
+
+operation_mode() {
+	swaymsg output "$choice_output" mode "$choice_mode"
 }
 
 fuzzy_picker() {
@@ -89,6 +173,11 @@ run_operation() {
 		pick_output
 		operation_toggle
 		;;
+	Mode)
+		pick_output
+		pick_mode
+		operation_mode
+		;;
 	esac
 }
 
@@ -97,7 +186,8 @@ print_help() {
 > Sway output control <
 Options:
     -h, --help                       Show this help.
-    -l, --list                       List connected outputs.
+    -l, --list                       List outputs information.
+    -m, --mode <alias> <mode>        Change the output mode.
     -s, --scale <alias> <scale>      Scale an output.
     -t, --toggle <alias>             Toggle and output.
 
@@ -122,8 +212,12 @@ parse_command() {
 			choice_operation="Toggle"
 			run_operation
 			;;
+		-m | --mode)
+			choice_operation="Mode"
+			run_operation
+			;;
 		-l | --list)
-			list_outputs_with_alias
+			list_outputs_info
 			;;
 		-h | --help | *)
 			print_help
@@ -134,13 +228,17 @@ parse_command() {
 		case "$1" in
 		-s | --scale)
 			choice_output=$(get_output_from_alias "$2")
-            pick_scale_factor
-            operation_scale
+			pick_scale_factor
+			operation_scale
 			;;
 		-t | --toggle)
-			choice_operation="Toggle"
 			choice_output=$(get_output_from_alias "$2")
-            operation_toggle
+			operation_toggle
+			;;
+		-m | --mode)
+			choice_output=$(get_output_from_alias "$2")
+			pick_mode
+			operation_mode
 			;;
 		*)
 			print_help
@@ -151,8 +249,13 @@ parse_command() {
 		case "$1" in
 		-s | --scale)
 			choice_output=$(get_output_from_alias "$2")
-            choice_scale_factor="$3"
-            operation_scale
+			choice_scale_factor="$3"
+			operation_scale
+			;;
+		-m | --mode)
+			choice_output=$(get_output_from_alias "$2")
+			choice_mode="$3"
+			operation_mode
 			;;
 		*)
 			print_help
