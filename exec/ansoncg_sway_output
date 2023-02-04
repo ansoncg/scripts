@@ -4,10 +4,9 @@
 # fzf
 # jq/jaq
 
-## Variables ---
+## Configuration variables ---
 
 alias_path="$HOME/.config/ansoncg/sway_output/alias.json"
-
 
 ## List information ---
 
@@ -16,7 +15,13 @@ get_alias_from_output() {
 }
 
 get_output_from_alias() {
-	jaq -rc ".[] | select(.alias==\"$1\") | .output" <"$alias_path"
+	# Returns the input if not found
+	output=$(jaq -rc ".[] | select(.alias==\"$1\") | .output" <"$alias_path")
+	if [ -n "$output" ]; then
+		echo "$output"
+	else
+		echo "$1"
+	fi
 }
 
 list_current_modes() {
@@ -77,15 +82,16 @@ list_outputs_with_alias() {
 }
 
 list_outputs_info() {
-	echo "|------------|------------|-------|-----------------------|-------|"
-	printf "| %-10s | %-10s | %-5s | %-21s | %-5s |\n" "Name" "Alias" "Scale" "Mode" "Power"
-	echo "|------------|------------|-------|-----------------------|-------|"
+	echo "|------------|------------|-------|-----------------------|-------------|-------|"
+	printf "| %-10s | %-10s | %-5s | %-21s | %-11s | %-5s |\n" "Name" "Alias" "Scale" "Mode" "Rotation" "Power"
+	echo "|------------|------------|-------|-----------------------|-------------|-------|"
 	while read -r output_name; do
 		read -r current_power
 		alias=$(get_alias_from_output "$output_name")
 
 		if [ "$current_power" == true ]; then
 			read -r current_scale
+			read -r current_rotation
 			read -r current_width
 			read -r current_height
 			read -r current_refresh
@@ -93,14 +99,22 @@ list_outputs_info() {
 			current_refresh=${current_refresh:0:-3}.${current_refresh: -3}Hz
 		else
 			current_scale=0
+			current_rotation=none
 			current_width=0
 			current_height=0
 			current_refresh=0
 			current_power="Off"
 		fi
 
-		printf "| %-10s | %-10s | %-5s | %4sx%-4s @ %-9s | %-5s |\n" \
-			"$output_name" "$alias" "$current_scale" "$current_width" "$current_height" "$current_refresh" "$current_power"
+		printf "| %-10s | %-10s | %-5s | %4sx%-4s @ %-9s | %-11s | %-5s |\n" \
+			"$output_name" \
+            "$alias" \
+            "$current_scale" \
+            "$current_width" \
+            "$current_height" \
+            "$current_refresh" \
+            "$current_rotation" \
+            "$current_power"
 
 	done < <(swaymsg -t get_outputs |
 		jaq -rc \
@@ -109,9 +123,9 @@ list_outputs_info() {
             (.power),
             (select(.power==true) |
                 (.scale),
+                (.transform),
                 (.current_mode | .width, .height, .refresh)))')
-
-	echo "|------------|------------|-------|-----------------------|-------|"
+	echo "|------------|------------|-------|-----------------------|-------------|-------|"
 }
 
 list_modes() {
@@ -226,15 +240,16 @@ print_help() {
 	printf "\
 > Sway output control <
 Options:
-    -h, --help                       Show this help.
-    -l, --list                       List outputs information.
-    -m, --mode <alias> <mode>        Change the output mode.
-    -r, --rotate <alias> <rotation>  Rotate an output.
-    -s, --scale <alias> <scale>      Scale an output.
-    -t, --toggle <alias>             Toggle and output.
+    -h, --help                        Show this help.
+    -l, --list                        List outputs information.
+    -m, --mode   <output> <mode>      Change the output mode.
+    -r, --rotate <output> <rotation>  Rotate an output.
+    -s, --scale  <output> <scale>     Scale an output.
+    -t, --toggle <output>             Toggle and output.
 
 Info:
     Operations and options have a fuzzy selector if not specified.
+    Output can be the name or an alias in 'alias.json'.
     See 'man 5 sway-output' for more documentation.
 "
 }
@@ -309,11 +324,11 @@ parse_command() {
 			choice_mode="$3"
 			operation_mode
 			;;
-        -r | --rotate)
+		-r | --rotate)
 			choice_output=$(get_output_from_alias "$2")
-            choice_rotation="$3"
+			choice_rotation="$3"
 			operation_rotation
-            ;;
+			;;
 		*)
 			print_help
 			;;
