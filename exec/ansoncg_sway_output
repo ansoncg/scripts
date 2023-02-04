@@ -4,9 +4,12 @@
 # fzf
 # jq/jaq
 
-# man 5 sway-output
+## Variables ---
 
 alias_path="$HOME/.config/ansoncg/sway_output/alias.json"
+
+
+## List information ---
 
 get_alias_from_output() {
 	jaq -rc ".[] | select(.output==\"$1\") | .alias" <"$alias_path"
@@ -37,9 +40,12 @@ list_outputs() {
 
 list_operations() {
 	printf "\
+List
+Mode
+Rotate
 Scale
 Toggle
-Mode"
+"
 }
 
 list_scale_factor() {
@@ -49,6 +55,18 @@ list_scale_factor() {
 1.5
 1.7
 2"
+}
+
+list_rotations() {
+	printf "\
+normal
+90
+180
+270
+flipped
+flipped-90
+flipped-180
+flipped-270"
 }
 
 list_outputs_with_alias() {
@@ -121,6 +139,8 @@ list_modes() {
                 (.modes | length , (.[] | .width, .height, .refresh, .picture_aspect_ratio)))")
 }
 
+## Pick options ---
+
 pick_output() {
 	choice_output=$(fuzzy_picker "$(list_outputs_with_alias)" "Output" | awk '{print $1}')
 }
@@ -133,11 +153,18 @@ pick_scale_factor() {
 	choice_scale_factor=$(fuzzy_picker "$(list_scale_factor)" "Scale factor")
 }
 
+pick_rotation() {
+	choice_rotation=$(fuzzy_picker "$(list_rotations)" "Rotation options")
+}
+
 pick_mode() {
 	# Removes the aspect ratio and duplicates for now
 	modes=$(list_modes | awk '{print $1}' | uniq)
 	choice_mode=$(fuzzy_picker "$modes" "Modes")
 }
+
+## Run operations ---
+
 operation_scale() {
 	swaymsg output "$choice_output" scale "$choice_scale_factor"
 }
@@ -150,16 +177,8 @@ operation_mode() {
 	swaymsg output "$choice_output" mode "$choice_mode"
 }
 
-fuzzy_picker() {
-	echo "$1" | fzf \
-		--border=sharp \
-		--cycle \
-		--header="$2" \
-		--header-first \
-		--info=inline \
-		--margin=0,0,0,0 \
-		--padding=0,0,0,1 \
-		--height=50%
+operation_rotation() {
+	swaymsg output "$choice_output" transform "$choice_rotation"
 }
 
 run_operation() {
@@ -178,7 +197,29 @@ run_operation() {
 		pick_mode
 		operation_mode
 		;;
+	Rotate)
+		pick_output
+		pick_rotation
+		operation_rotation
+		;;
+	List)
+		list_outputs_info
+		;;
 	esac
+}
+
+## Script general ---
+
+fuzzy_picker() {
+	echo "$1" | fzf \
+		--border=sharp \
+		--cycle \
+		--header="$2" \
+		--header-first \
+		--info=inline \
+		--margin=0,0,0,0 \
+		--padding=0,0,0,1 \
+		--height=50%
 }
 
 print_help() {
@@ -188,11 +229,13 @@ Options:
     -h, --help                       Show this help.
     -l, --list                       List outputs information.
     -m, --mode <alias> <mode>        Change the output mode.
+    -r, --rotate <alias> <rotation>  Rotate an output.
     -s, --scale <alias> <scale>      Scale an output.
     -t, --toggle <alias>             Toggle and output.
 
 Info:
     Operations and options have a fuzzy selector if not specified.
+    See 'man 5 sway-output' for more documentation.
 "
 }
 
@@ -214,6 +257,10 @@ parse_command() {
 			;;
 		-m | --mode)
 			choice_operation="Mode"
+			run_operation
+			;;
+		-r | --rotate)
+			choice_operation="Rotate"
 			run_operation
 			;;
 		-l | --list)
@@ -240,6 +287,11 @@ parse_command() {
 			pick_mode
 			operation_mode
 			;;
+		-r | --rotate)
+			choice_output=$(get_output_from_alias "$2")
+			pick_rotation
+			operation_rotation
+			;;
 		*)
 			print_help
 			;;
@@ -257,6 +309,11 @@ parse_command() {
 			choice_mode="$3"
 			operation_mode
 			;;
+        -r | --rotate)
+			choice_output=$(get_output_from_alias "$2")
+            choice_rotation="$3"
+			operation_rotation
+            ;;
 		*)
 			print_help
 			;;
