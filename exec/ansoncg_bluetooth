@@ -55,7 +55,7 @@ controller_select() {
 }
 
 controller_devices_select() {
-    entry=$(fuzzy_picker "$(controller_devices "$1")" "Bluetooth - Select device new")
+    entry=$(fuzzy_picker "$(controller_devices "$1")" "Bluetooth - Select device")
 	echo "$entry" | cut -d ' ' -f1
 }
 

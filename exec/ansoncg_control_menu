@@ -333,6 +333,7 @@ grep_search() {
 		while read -r text_len; do
 			for _ in $(seq 1 "$text_len"); do
 				read -r content
+                content=${content/\$HOME/$HOME}
 				if [ -f "$content" ]; then
 					file_list+="$content\n"
 				fi
@@ -347,7 +348,7 @@ grep_search() {
 }
 
 debugging_graph() {
-	graph_string_ini="digraph G { rankdir=LR; center=true; concentrate=true; ranksep=2; nodesep=1 "
+	graph_string_ini="graph G { center=true; concentrate=true; ranksep=2; nodesep=1 "
 	graph_string_mid=""
 
 	files=$(ls $menus_path)
@@ -362,11 +363,14 @@ debugging_graph() {
 			read -r direction
 			read -r level
 
+            if [ "$level" == "Up" ]; then
+                continue;
+            fi
+
 			file=$(echo "$file" | cut -d '.' -f1)
 			graph_string_mid+="$file [shape=box]; \n"
 			if [ "$direction" != "" ]; then
-				# graph_string_mid+="$file -> $direction [label=$level]; \n"
-				graph_string_mid+="$file -> $direction ; \n"
+				graph_string_mid+="$file -- $direction ; \n"
 			fi
 		done < <($parser -rc \
 			'(.menu | length , (.[] | .direction, .level, .))' \
