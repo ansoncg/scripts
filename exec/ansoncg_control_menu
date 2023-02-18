@@ -110,7 +110,8 @@ parse_command_line() {
 
 print_help() {
 	printf "\
-Control menu
+> Control menu <
+
 Options:
     -h, --help          Show this help.
     -r, --reopen        Open last used menu file.

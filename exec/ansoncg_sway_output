@@ -200,9 +200,9 @@ pick_mode() {
 }
 
 pick_output_mirror() {
-    outputs=$(list_outputs_with_alias)
-    printf -v outputs "%s\n%-12s | " "$outputs" "region "
-    choice_output=$(fuzzy_picker "$outputs" "Output" | awk '{print $1}')
+	outputs=$(list_outputs_with_alias)
+	printf -v outputs "%s\n%-12s | " "$outputs" "region "
+	choice_output=$(fuzzy_picker "$outputs" "Output" | awk '{print $1}')
 }
 
 pick_addr() {
@@ -236,16 +236,20 @@ operation_rotation() {
 	swaymsg output "$choice_output" transform "$choice_rotation"
 }
 
+operation_position() {
+	swaymsg output "$choice_output" "$pos_x" "$pox_y"
+}
+
 operation_mirror() {
-    if [ -z "$choice_output" ]; then
-        exit 0
-    fi
-    printf "%s\n%s\n" "Choose operations with '-t' flag:" "$(list_rotations)"
-    if [ "$choice_output" == "region" ]; then
-        wl-mirror -S -r "$(slurp)"
-    else
-        wl-mirror -S "$choice_output"
-    fi
+	if [ -z "$choice_output" ]; then
+		exit 0
+	fi
+	printf "%s\n%s\n\n" "Choose operations with '-t' flag:" "$(list_rotations)"
+	if [ "$choice_output" == "region" ]; then
+		wl-mirror -S -r "$(slurp)"
+	else
+		wl-mirror -S "$choice_output"
+	fi
 
 }
 
@@ -262,7 +266,7 @@ operation_headless_remove() {
 	swaymsg output "$choice_output" unplug
 
 	# shellcheck disable=SC2181
-	if [ $? -eq 0 ] && [ -n "$choice_output" ] ; then
+	if [ $? -eq 0 ] && [ -n "$choice_output" ]; then
 		echo "$choice_output removed."
 	fi
 }
@@ -292,6 +296,11 @@ run_operation() {
 		pick_rotation
 		operation_rotation
 		;;
+    "Position")
+		pick_output
+        # read pos
+        operation_position
+        ;;
 	"List")
 		list_outputs_info
 		;;
@@ -302,15 +311,15 @@ run_operation() {
 		pick_output
 		operation_headless_remove
 		;;
-    "Virtual-Display")
+	"Virtual-Display")
 		pick_output
 		pick_addr
 		operation_headless_vnc
-        ;;
-	"Mirror") 
-        pick_output_mirror
-        operation_mirror
-        ;;
+		;;
+	"Mirror")
+		pick_output_mirror
+		operation_mirror
+		;;
 	esac
 }
 
@@ -338,6 +347,7 @@ Options:
     -s, --scale      <output> <scale>                   Scale an output.
     -t, --toggle     <output>                           Toggle an output.
     -w, --mirror     <output|region>                    Mirror an output or region with wl-mirror using stream mode.
+    -p, --position                                      TODO: Define outputs positions.
     -l, --list                                          List outputs information.
     -h, --help                                          Show this help.
     --cheadless                                         Create headless output.
@@ -347,7 +357,7 @@ Options:
 Info:
     Operations and options have a fuzzy selector if not specified.
     Output can be the name or an alias in 'alias.json'.
-    See 'man 5 sway-output' for more documentation.
+    See 'man 5 sway-output' for sway documentation.
 "
 }
 
@@ -375,22 +385,26 @@ parse_command() {
 			choice_operation="Rotate"
 			run_operation
 			;;
-        -w | --mirror)
+		-p | --positoin)
+			choice_operation="Position"
+			run_operation
+			;;
+		-w | --mirror)
 			choice_operation="Mirror"
-            run_operation
-            ;;
-        --cheadless)
+			run_operation
+			;;
+		--cheadless)
 			choice_operation="Headless-Create"
 			run_operation
-            ;;
-        --rheadless)
+			;;
+		--rheadless)
 			choice_operation="Headless-Remove"
 			run_operation
-            ;;
-        --vdisplay)
+			;;
+		--vdisplay)
 			choice_operation="Virtual-Display"
 			run_operation
-            ;;
+			;;
 		-l | --list)
 			list_outputs_info
 			;;
@@ -419,20 +433,20 @@ parse_command() {
 			choice_output=$(get_output_from_alias "$2")
 			pick_rotation
 			operation_rotation
-            ;;
-        -w | --mirror)
-			choice_output=$(get_output_from_alias "$2")
-            operation_mirror
 			;;
-        --rheadless)
+		-w | --mirror)
 			choice_output=$(get_output_from_alias "$2")
-            operation_headless_remove
-            ;;
-        --vdisplay)
+			operation_mirror
+			;;
+		--rheadless)
 			choice_output=$(get_output_from_alias "$2")
-            pick_addr
-            operation_headless_vnc
-            ;;
+			operation_headless_remove
+			;;
+		--vdisplay)
+			choice_output=$(get_output_from_alias "$2")
+			pick_addr
+			operation_headless_vnc
+			;;
 		*)
 			print_help
 			;;
@@ -455,11 +469,11 @@ parse_command() {
 			choice_rotation="$3"
 			operation_rotation
 			;;
-        --vdisplay)
+		--vdisplay)
 			choice_output=$(get_output_from_alias "$2")
-            choice_addr="$3"
-            operation_headless_vnc
-            ;;
+			choice_addr="$3"
+			operation_headless_vnc
+			;;
 		*)
 			print_help
 			;;

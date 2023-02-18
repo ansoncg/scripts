@@ -7,9 +7,13 @@
 # - chatterino
 # - mpv
 
+# Channel auth:
+# document.cookie.split("; ").find(item=>item.startsWith("auth-token="))?.split("=")[1]
+
 auth=""
 id=""
 default_quality=""
+channel_auth=""
 eval "$(cat "$HOME"/.local/share/ansoncg/twitch/twitch.conf)"
 
 cols=$(tput cols)
@@ -80,8 +84,15 @@ play_stream() {
 	fi
 	if [ "$stream" ]; then
 		# streamlink --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
-		streamlink --twitch-disable-ads --twitch-low-latency --quiet -p mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
 		# firefox --new-window twitch.tv/"$stream"/chat
+        
+		streamlink --twitch-disable-ads \
+            --twitch-low-latency \
+            --quiet \
+            "--twitch-api-header=Authorization=OAuth $channel_auth" \
+            -p \
+            mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+
 		chatterino -c "$stream" 2>/dev/null &
 		printf "Starting '%s' stream.\n" "$stream"
 	fi

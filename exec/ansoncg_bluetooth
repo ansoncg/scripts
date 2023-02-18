@@ -7,6 +7,28 @@
 
 labels_path="$HOME/.config/ansoncg/bluetooth/labels.json"
 
+print_help() {
+	printf "\
+> Bluetooth script that can handle multiple controllers <
+
+Options:
+    -b, --labels        Print registered labels.
+    -c, --connect       Connect a device.
+    -d, --disconnect    Disconnect a device.
+    -h, --help          Show this help.
+    -i, --info          Get info about a device.
+    -l, --list          List connected devices.
+    -r, --reconnect     Disconnect a device and reconnect after 10 seconds.
+    -x, --restart       Restart bluetooth service.
+
+Info:
+    * Actions '-c', '-d', '-i' and '-r' can be used with predetermied associations 
+    stored on 'labels.json' or with a menu if empty.
+
+    * Calling the program without arguments brings up an action selection menu.
+"
+}
+
 # Bluetooth general ---
 
 general_bluetooth_restart() {
@@ -156,28 +178,6 @@ fuzzy_picker() {
 		--margin=0,0,0,0 \
 		--padding=0,0,0,1 \
 		--height=50%
-}
-
-print_help() {
-	printf "\
-> Bluetooth script that can handle multiple controllers <
-
-Options:
-    -b, --labels        Print registered labels.
-    -c, --connect       Connect a device.
-    -d, --disconnect    Disconnect a device.
-    -h, --help          Show this help.
-    -i, --info          Get info about a device.
-    -l, --list          List connected devices.
-    -r, --reconnect     Disconnect a device and reconnect after 10 seconds.
-    -x, --restart       Restart bluetooth service.
-
-Info:
-    * Actions '-c', '-d', '-i' and '-r' can be used with predetermied associations 
-    stored on 'labels.json' or with a menu if empty.
-
-    * Calling the program without arguments brings up an action selection menu.
-"
 }
 
 parse_command() {

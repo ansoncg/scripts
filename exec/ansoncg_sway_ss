@@ -29,13 +29,13 @@ region_screenshot() {
 }
 
 region_ocr() {
-    grim -l 0 -g "$(slurp)" - | tesseract -l eng stdin stdout | wl-copy
-    result=$(wl-paste -n)
-    if [ -z "$result" ]; then
-        notify-send -u critical -t 1500 "Region OCR" "Empty result"
-    else
-        notify-send "Region OCR" "$result"
-    fi
+	grim -l 0 -g "$(slurp)" - | tesseract -l eng stdin stdout | wl-copy
+	result=$(wl-paste -n)
+	if [ -z "$result" ]; then
+		notify-send -u critical -t 1500 "Region OCR" "Empty result"
+	else
+		notify-send "Region OCR" "$result"
+	fi
 }
 
 show_help() {
@@ -57,8 +57,8 @@ case "$1" in
 	region_screenshot
 	;;
 -o | --ocr)
-    region_ocr
-    ;;
+	region_ocr
+	;;
 -h | --help)
 	show_help
 	;;

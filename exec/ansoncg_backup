@@ -4,6 +4,21 @@
 
 BACKUP_PATH="$HOME/usb/anderson/SONY/backup_borg"
 
+print_help() {
+	printf "\
+> User data backup script <
+
+Options:
+    -n, --now       Create a new backup with the current time
+    -l, --list      List the backups
+    -c, --check     Check the backup consistency
+    -h, --help      Show this help
+
+To init a borg repository:
+"
+	backup_init
+}
+
 backup_now() {
 	borg create --progress "$BACKUP_PATH"::backup-{now:%d-%m-%Y} \
 		"$HOME"/files \
@@ -30,20 +45,6 @@ backup_check() {
 
 backup_info() {
 	borg info "$BACKUP_PATH"
-}
-
-print_help() {
-	printf "\
-User data backup script
-Options:
-    -n, --now       Create a new backup with the current time
-    -l, --list      List the backups
-    -c, --check     Check the backup consistency
-    -h, --help      Show this help
-
-To init a borg repository:
-"
-	backup_init
 }
 
 case "$1" in
