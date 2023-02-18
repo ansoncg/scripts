@@ -1,7 +1,7 @@
 # backup
 
 Backup user data using Borg
-- Create and backups 
+- Create and list backups 
 - Get info from backups
 - Check integrity
 
