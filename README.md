@@ -94,7 +94,7 @@ Handle music using mpd, fzf and waybar. Use together with mpc commands on sway.
 
 - Search and play a song with fzf
 - Show current cover if available
-- Show information about a song and witch one is next
+- Show information about a song and which one is next
 - Toggle lyrics on waybar with sptlrx
 - Play a playslist or a external source, like a youtube video
 
@@ -130,8 +130,6 @@ Move a floating window to a position using the numeric keypad as reference
 **Sway only**
 
 Show modes shortcuts help on a notification
-
-**TODO**: Create a centralized command configuration that this script can draw it's information automatically
 
 # sway_init
 **Sway only**
