@@ -18,7 +18,7 @@ Interact with bluetooth using bluetoothctl and fzf
     - List 
     - Reconnect
 - Restart bluetooth service
-- Define names to assossiate a controller with a device
+- Define names to associate a controller with a device
 
 # control_menu
 
@@ -30,7 +30,7 @@ Emulate a start menu with fzf
 - Search all referenced files with ripgrep
 - Draw a graph of the menus structure
 - Configure a menu using JSON
-- Open specific menu by name with fish autocomplete
+- Open a specific menu by name with fish autocomplete
 - Open last used menu
 
 ```
