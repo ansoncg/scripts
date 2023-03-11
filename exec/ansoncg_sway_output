@@ -6,6 +6,7 @@
 # - wayvnc
 # - wl-mirror
 # - slurp
+# - pipectl
 
 ## Configuration variables ---
 
@@ -244,13 +245,18 @@ operation_mirror() {
 	if [ -z "$choice_output" ]; then
 		exit 0
 	fi
-	printf "%s\n%s\n\n" "Choose operations with '-t' flag:" "$(list_rotations)"
 	if [ "$choice_output" == "region" ]; then
-		wl-mirror -S -r "$(slurp)"
+        region=$(slurp)
+        pipectl -n mirror-fzf -o | wl-mirror -S -r "$region" &
 	else
-		wl-mirror -S "$choice_output"
+        pipectl -n mirror-fzf -o | wl-mirror -S "$choice_output" &
 	fi
 
+    choice_rotation="null"
+    while [ -n "$choice_rotation" ] ; do
+        choice_rotation=$(fuzzy_picker "$(list_rotations)" "Rotations" | awk '{print $1}')
+        echo "-t $choice_rotation" | pipectl -n mirror-fzf -i
+    done
 }
 
 operation_headless_create() {

@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Virt-manager
+
+start_toggle() {
+	systemctl start libvirtd.service
+	virt-manager
+}
+
+stop_toggle() {
+	echo "TODO"
+}
+
+explain_toggle() {
+	printf "Control libvirtd service and virt-manager.\n"
+}
+
+check_toggle() {
+    true
+}

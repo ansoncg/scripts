@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Wi-Fi
+
+start_toggle() {
+	nmcli r wifi on
+}
+
+stop_toggle() {
+	nmcli r wifi off
+}
+
+explain_toggle() {
+	printf "Enable and disable wi-fi.\n"
+}
+
+check_toggle() {
+    true
+}

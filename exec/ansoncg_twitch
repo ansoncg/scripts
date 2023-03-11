@@ -89,9 +89,9 @@ play_stream() {
 		streamlink --twitch-disable-ads \
             --twitch-low-latency \
             --quiet \
-            "--twitch-api-header=Authorization=OAuth $channel_auth" \
             -p \
             mpv -a '--cache=yes --demuxer-max-bytes=2000M' https://www.twitch.tv/"$stream" "$quality" 2>/dev/null &
+            # "--twitch-api-header=Authorization=OAuth $channel_auth" \
 
 		chatterino -c "$stream" 2>/dev/null &
 		printf "Starting '%s' stream.\n" "$stream"

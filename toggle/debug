@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Debug
+
+start_toggle() {
+	echo "Debug message start"
+}
+
+stop_toggle() {
+	echo "Debug message stop"
+}
+
+explain_toggle() {
+	echo "Debug message explain"
+}
+
+check_toggle() {
+	echo "1"
+}

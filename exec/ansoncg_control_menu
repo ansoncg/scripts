@@ -30,7 +30,7 @@ menus_path="$HOME/.config/ansoncg/control_menu/menus"
 # VARIABLES -|-|-|-
 index=0
 cols=$(tput cols) # Terminal cols
-space=$(((cols / 2) - 15))
+space=$((cols / 2 - 15))
 delim="+@!#" # Something hard to appear in a file
 
 declare -A run
@@ -180,7 +180,7 @@ json_parse_show() {
 			execute=$(truncate_string "$execute")
 
 			# Add line to print to the result. Eveything after the first delim is not shown.
-			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | $delim%s$delim%s$delim%s\n" \
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s |  $delim%s$delim%s$delim%s\n" \
 				"$index" "Command" "$label" "$execute" "$index" "Command" "$help"
 			result+=$temp_string
 		done
@@ -194,7 +194,7 @@ json_parse_show() {
 			read -r label
 			read -r content
 
-            content=${content/\$HOME/$HOME}
+			content=${content/\$HOME/$HOME}
 			if [ -f "$content" ]; then
 				info="$(basename "$content")"    # Only the file name. The content is a file.
 				run["$index"]="$EDITOR $content" # Set the command to run
@@ -209,7 +209,7 @@ json_parse_show() {
 			info=$(truncate_string "$info")
 
 			# Add line to print to the result. Eveything after the first delim is not shown.
-			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | $delim%s$delim%s$delim%s\n" \
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s |  $delim%s$delim%s$delim%s\n" \
 				"$index" "Text" "$label" "$info" "$index" "Text" "$content"
 			result+=$temp_string
 		done
@@ -242,7 +242,7 @@ json_parse_show() {
 			fi
 
 			# Add line to print to the result. Eveything after the first delim is not shown.
-			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s | $delim%s$delim%s$delim%s\n" \
+			printf -v temp_string "| %02d | %-7s | %-${space}s | %-${space}s |  $delim%s$delim%s$delim%s\n" \
 				"$index" "Menu" "$label" "$level" "$index" "Menu" "$direction"
 			result+=$temp_string
 		done
@@ -334,7 +334,7 @@ grep_search() {
 		while read -r text_len; do
 			for _ in $(seq 1 "$text_len"); do
 				read -r content
-                content=${content/\$HOME/$HOME}
+				content=${content/\$HOME/$HOME}
 				if [ -f "$content" ]; then
 					file_list+="$content\n"
 				fi
@@ -364,9 +364,9 @@ debugging_graph() {
 			read -r direction
 			read -r level
 
-            if [ "$level" == "Up" ]; then
-                continue;
-            fi
+			if [ "$level" == "Up" ] || [ "$level" == "Inside" ]; then
+				continue
+			fi
 
 			file=$(echo "$file" | cut -d '.' -f1)
 			graph_string_mid+="$file [shape=box]; \n"

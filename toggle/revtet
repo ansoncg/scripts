@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# Reverse tethering
+
+start_toggle() {
+	process_start gnirehtet
+}
+
+stop_toggle() {
+	process_stop gnirehtet
+}
+
+explain_toggle() {
+	echo "Toggle reverse tethering for android with gnirehtet"
+}
+
+check_toggle() {
+    true
+}

@@ -96,7 +96,7 @@ Handle music using mpd, fzf and waybar. Use together with mpc commands on sway.
 - Show current cover if available
 - Show information about a song and which one is next
 - Toggle lyrics on waybar with sptlrx
-- Play a playslist or a external source, like a youtube video
+- Play a playlist or a external source, like a youtube video
 
 # nvim_remote
 

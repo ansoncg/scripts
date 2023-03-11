@@ -1,0 +1,19 @@
+#!/bin/bash
+
+# KDE Connect
+
+start_toggle() {
+	process_start /usr/lib/kdeconnectd
+}
+
+stop_toggle() {
+	process_stop /usr/lib/kdeconnect
+}
+
+explain_toggle() {
+	printf "Control kdeconnect service. mpDris2 is needed to interact with mpd.\n"
+}
+
+check_toggle() {
+    true
+}

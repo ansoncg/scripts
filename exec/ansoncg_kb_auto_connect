@@ -1,10 +1,10 @@
 #!/bin/bash
 
-info=$(printf "select 00:1A:7D:DA:71:13\ninfo F4:73:35:5D:08:5E\n" | bluetoothctl | grep "Connected: yes") 
+info=$(ansoncg_bluetooth -i k380 | grep "Connected: yes")
 while [ -z "$info" ]; do
-    printf "select 00:1A:7D:DA:71:13\nconnect F4:73:35:5D:08:5E\n" | bluetoothctl
+    ansoncg_bluetooth -c jbl
     sleep 3
-    info=$(printf "select 00:1A:7D:DA:71:13\ninfo F4:73:35:5D:08:5E\n" | bluetoothctl | grep "Connected: yes") 
+    info=$(ansoncg_bluetooth -i k380 | grep "Connected: yes")
 done
 
 notify-send "Bluetooth" "Keyboard connected"

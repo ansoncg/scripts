@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# Virtual cam
+
+start_toggle() {
+	sudo modprobe v4l2loopback video_nr=3 card_label="My cam"
+	pactl load-module module-pipe-source source_name=virtualmic file=/tmp/virtualmic format=s16le rate=44100 channels=1
+}
+
+stop_toggle() {
+	sudo modprobe -r v4l2loopback
+	pactl unload-module module-pipe-source
+}
+
+explain_toggle() {
+	printf "Control v4l2loopback and virtualmic to create webcam emulation.\n"
+}
+
+check_toggle() {
+    true
+}

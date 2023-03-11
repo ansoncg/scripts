@@ -8,6 +8,8 @@
 cache_path=$HOME/.local/share/ansoncg/launcher/
 log_path="$HOME"/.local/share/ansoncg/launcher/launcher.log
 apps_path=/usr/share/applications
+delim="+@!#"
+csv_delim=";"
 
 update_cache() {
 	mkdir -p "$cache_path"
@@ -18,45 +20,59 @@ update_cache() {
 		ini=$(sed -e '/^$/,$d' $apps_path/"$file")            # File up to first empty line
 		name=$(echo "$ini" | grep "^Name=" | cut -d '=' -f2-) # Name=
 		if [ "$name" ]; then
-			printf "%-40s : %s\n" "$name" "$file" >>launcher.cache
+			printf "%s$csv_delim%s\n" "$name" "$file" >>launcher.cache
 		fi
 	done
-	sort -u -t: -k1,1 launcher.cache -o launcher.cache # Unique sort by name
+	sort -u -t\; -k1,1 launcher.cache -o launcher.cache # Unique sort by name
 	printf "Launcher cache updated.\n"
 }
 
 run_launcher() {
+	cols=$(tput cols) # Terminal cols
+	space=$((cols / 2 - 8))
+
+	while IFS="$csv_delim" read -r app_name desktop_file; do
+		printf -v tmp_str "| %-${space}s | %-${space}s |  $delim%s$delim%s\n" \
+			"$app_name" "$desktop_file" "$app_name" "$desktop_file"
+		result+=$tmp_str
+	done <"$cache_path"/launcher.cache
+
 	if [ -z "$1" ]; then
 		entry=$(
-			fzf \
+			echo -e "${result::-1}" | fzf \
+				--delimiter=$delim \
+				--with-nth=1 \
+				--ellipsis="" \
+				--no-hscroll \
 				--border=sharp \
 				--header="Software launcher" \
 				--header-first \
-				--cycle --info=inline \
+				--cycle \
+				--info=inline \
 				--margin=0,0,0,0 \
 				--padding=0,0,0,1 \
-				--height=50% \
-				--multi \
-				<"$cache_path"/launcher.cache
+				--height=50%
 		)
 	else
-		entry=$(fzf -f "$1" <"$cache_path"/launcher.cache | head -n1)
+		entry=$(echo -e "$result" | fzf -f "$1" | head -n1)
 	fi
-	app_name=$(echo "$entry" | cut -d ':' -f 1)
-	desktop_file=$(echo "$entry" | cut -d ':' -f 2)
+	app_name=$(echo "$entry" | awk -F $delim '{print $2}')
+	desktop_file=$(echo "$entry" | awk -F $delim '{print $3}')
 	if [ "$app_name" ]; then
 		printf "Running: %s\n" "$app_name"
 		printf "%s\n" "gtk-launch ${desktop_file:1} >> $log_path 2>&1"
-		gtk-launch "${desktop_file:1}" >>"$log_path" 2>&1
+		gtk-launch "$desktop_file" >>"$log_path" 2>&1
 	fi
 }
 
 show_help() {
 	printf "\
-Software launcher
+> Software launcher <
+
 Options:
     -u, --update    Update cache
-    -c, --cache     Show cache
+    -c, --cache     Show cache file
+    -l, --log       Show log file
     -h, --help      Show this help
 "
 }
@@ -67,6 +83,9 @@ case "$1" in
 	;;
 -c | --cache)
 	bat "$cache_path"/launcher.cache
+	;;
+-l | --log)
+	tac "$log_path" | bat --paging always
 	;;
 -h | --help)
 	show_help
